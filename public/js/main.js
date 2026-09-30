@@ -47,7 +47,7 @@
     var wrap = mk('div', 'vp'), stage = mk('div', 'vp-stage'), shield = mk('div', 'vp-shield');
     var poster = mk('img', 'vp-poster'); poster.alt = ''; poster.src = 'https://i.ytimg.com/vi/' + id + '/maxresdefault.jpg';
     poster.onerror = function () { poster.onerror = null; poster.src = 'https://i.ytimg.com/vi/' + id + '/hqdefault.jpg'; };
-    var big = mk('button', 'vp-big', ICON.play + '<span>Watch the video</span>'); big.type = 'button'; big.setAttribute('aria-label', 'Play video');
+    var big = mk('button', 'vp-big', ICON.play + '<span>Watch the video</span>'); big.type = 'button'; var bigLabel = big.querySelector('span'); big.setAttribute('aria-label', 'Play video');
     var bar = mk('div', 'vp-bar'), pp = mk('button', 'vp-btn', ICON.play), mute = mk('button', 'vp-btn', ICON.vol);
     var time = mk('span', 'vp-time mono', '0:00'), seek = mk('input', 'vp-seek'), fs = mk('button', 'vp-btn', ICON.full);
     var cc = mk('button', 'vp-btn vp-cc', ICON.cc); cc.type = 'button'; cc.hidden = true; cc.setAttribute('aria-label', 'Captions'); cc.setAttribute('aria-pressed', 'false'); cc.title = 'Captions';
@@ -59,26 +59,38 @@
     [stage, poster, shield, big, bar].forEach(function (n) { wrap.appendChild(n); });
     el.appendChild(wrap);
 
-    var player = null, playing = false, started = false, tick = null, counted = false;
+    var player = null, ready = false, wantPlay = false, creating = null, playing = false, started = false, tick = null, counted = false, showT = null, warm = null;
     function ui() {
       wrap.classList.toggle('playing', playing);
       wrap.classList.toggle('started', started);
       pp.innerHTML = playing ? ICON.pause : ICON.play;
+      if (playing) { bigLabel.textContent = 'Watch the video'; wantPlay = false; }
+      armHide();
     }
+    // Controls are only on screen while the mouse is over the video (they also hide after a moment of stillness while playing).
+    function armHide(ms) {
+      clearTimeout(showT);
+      if (playing && wrap.classList.contains('show')) showT = setTimeout(function () { wrap.classList.remove('show'); }, ms || 2500);
+    }
+    wrap.addEventListener('pointermove', function (e) { if (e.pointerType === 'touch') return; wrap.classList.add('show'); armHide(); });
+    wrap.addEventListener('pointerenter', function (e) { if (e.pointerType !== 'touch') wrap.classList.add('show'); });
+    wrap.addEventListener('pointerleave', function (e) { if (e.pointerType === 'touch') return; clearTimeout(showT); wrap.classList.remove('show'); });
+    wrap.addEventListener('pointerdown', function (e) { if (e.pointerType === 'touch') { wrap.classList.add('show'); armHide(3000); } });
+    // The player is built ahead of time (cued, not playing) so a click can start it instantly.
     function ensure() {
-      if (player) return Promise.resolve();
-      started = true;
-      return loadYT().then(function () {
+      if (creating) return creating;
+      creating = loadYT().then(function () {
         return new Promise(function (res) {
           var node = mk('div'); stage.appendChild(node);
           player = new window.YT.Player(node, {
             videoId: id, host: 'https://www.youtube-nocookie.com',
-            playerVars: { autoplay: 1, controls: 0, disablekb: 1, fs: 0, iv_load_policy: 3, modestbranding: 1, playsinline: 1, rel: 0, cc_load_policy: 0 },
+            playerVars: { autoplay: 0, controls: 0, disablekb: 1, fs: 0, iv_load_policy: 3, modestbranding: 1, playsinline: 1, rel: 0, cc_load_policy: 0 },
             events: {
-              onReady: function (e) { captionsOff(); e.target.playVideo(); res(); },
+              onReady: function (e) { ready = true; captionsOff(); if (wantPlay) e.target.playVideo(); res(); },
               onStateChange: function (e) {
                 var S = window.YT.PlayerState;
                 playing = e.data === S.PLAYING || e.data === S.BUFFERING;
+                if (playing) started = true;
                 if (e.data === S.PLAYING && !counted) { counted = true; track('video_play'); captionsOff(); setTimeout(offerCaptions, 600); }
                 if (e.data === S.ENDED) { started = false; player.seekTo(0, true); player.pauseVideo(); }
                 ui();
@@ -87,7 +99,11 @@
           });
         });
       });
+      return creating;
     }
+    warm = setTimeout(ensure, 1200);
+    wrap.addEventListener('pointerenter', ensure, { once: true });
+    wrap.addEventListener('touchstart', ensure, { once: true, passive: true });
     // Captions start off (YouTube can turn them on from the viewer's own account settings); the CC button opts in.
     var ccOn = false;
     function captionsOff() {
@@ -109,7 +125,7 @@
       } catch (e) {}
     });
     function toggle() {
-      if (!player) { ensure(); return; }
+      if (!ready) { wantPlay = true; bigLabel.textContent = 'Loading…'; ensure(); return; }
       started = true;
       if (playing) player.pauseVideo(); else player.playVideo();
       ui();
@@ -132,7 +148,7 @@
       if (d) seek.value = Math.round(t / d * 1000);
       time.textContent = fmt(t) + ' / ' + fmt(d);
     }, 300);
-    el.__cleanup = function () { clearInterval(tick); try { if (player && player.destroy) player.destroy(); } catch (e) {} el.__cleanup = null; };
+    el.__cleanup = function () { clearInterval(tick); clearTimeout(showT); clearTimeout(warm); try { if (player && player.destroy) player.destroy(); } catch (e) {} el.__cleanup = null; };
     ui();
   }
 

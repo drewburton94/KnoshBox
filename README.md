@@ -39,7 +39,7 @@ New editable text = add `data-edit="some.key" data-label="Label" data-group="Sec
 
 ## Hero video
 Visitors see a poster with our own play button and controls. The YouTube player itself is fully covered, so the title,
-channel name and YouTube links can't be clicked. Clicking the video toggles play/pause.
+channel name and YouTube links can't be clicked. Clicking the video toggles play/pause. The player is built in the background shortly after the page loads so playback starts instantly, and the controls only appear while the mouse is over the video.
 
 ## Email each message to Gmail (optional but recommended)
 Messages are always saved (editor > Messages). To also get them by email:

@@ -53,8 +53,7 @@ button{font:inherit;color:inherit}
 .vp-big:hover{transform:translate(-50%,-50%) scale(1.04)}
 .vp-big:active{transform:translate(-50%,calc(-50% + 6px));box-shadow:0 0 0 var(--ink)}
 .vp-bar{position:absolute;z-index:4;left:16px;right:16px;bottom:16px;display:flex;align-items:center;gap:10px;padding:8px 12px;border:2.5px solid var(--ink);border-radius:99px;background:rgba(251,248,241,.94);opacity:0;transform:translateY(8px);transition:opacity .2s,transform .2s;pointer-events:none}
-.vp.started .vp-bar{opacity:1;transform:none;pointer-events:auto}
-.vp.playing:not(:hover):not(:focus-within) .vp-bar{opacity:0;transform:translateY(8px)}
+.vp.started.show .vp-bar,.vp.started .vp-bar:has(:focus-visible){opacity:1;transform:none;pointer-events:auto}
 .vp-btn{display:flex;align-items:center;justify-content:center;width:34px;height:34px;border:0;border-radius:50%;background:transparent;color:var(--ink);cursor:pointer;padding:0}
 .vp-btn:hover{background:var(--tint)}
 .vp-time{font-size:12px;white-space:nowrap}
