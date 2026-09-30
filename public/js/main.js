@@ -188,12 +188,14 @@
     el.style.fontSize = ''; el.style.whiteSpace = ''; el.style.width = '';
     var base = parseFloat(getComputedStyle(el).fontSize), p = el.parentElement, cs = getComputedStyle(p);
     var avail = p.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
-    if (!avail) return 1;
+    if (!avail) return { scale: 1, fits: true };
+    var floor = Math.max(0.7, (parseFloat(el.getAttribute('data-fit-min')) || 0) / base);
     el.style.whiteSpace = 'nowrap'; el.style.width = 'max-content'; // natural one-line width, even for stretched flex items
     var size = base;
-    while (el.offsetWidth > avail && size > base * 0.7) { size -= 1; el.style.fontSize = size + 'px'; }
+    while (el.offsetWidth > avail && size > base * floor) { size -= 1; el.style.fontSize = size + 'px'; }
+    var fits = el.offsetWidth <= avail;
     el.style.fontSize = ''; el.style.whiteSpace = ''; el.style.width = '';
-    return size / base;
+    return { scale: size / base, fits: fits };
   }
   var fitQueued = false;
   function fitAll() {
@@ -203,11 +205,18 @@
       var groups = {};
       [].forEach.call(document.querySelectorAll('[data-fit]'), function (el) { (groups[el.getAttribute('data-fit')] = groups[el.getAttribute('data-fit')] || []).push(el); });
       Object.keys(groups).forEach(function (g) {
-        var els = groups[g], scale = Math.min.apply(null, els.map(fitScale));
+        var els = groups[g], res = els.map(fitScale), scale = 1;
+        res.forEach(function (r) { if (r.fits && r.scale < scale) scale = r.scale; });
         els.forEach(function (el) { if (scale < 1) el.style.fontSize = (parseFloat(getComputedStyle(el).fontSize) * scale) + 'px'; });
       });
     });
   }
+  // Re-fit once the web fonts have actually loaded (text widths change when they swap in).
+  if (document.fonts) {
+    if (document.fonts.addEventListener) document.fonts.addEventListener('loadingdone', fitAll);
+    try { Promise.all([document.fonts.load('800 32px "Bricolage Grotesque"'), document.fonts.load('400 16px "DM Mono"')]).then(fitAll, function () {}); } catch (e) {}
+  }
+  setTimeout(fitAll, 600); setTimeout(fitAll, 2500);
   window.addEventListener('resize', fitAll);
   window.addEventListener('load', fitAll);
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitAll);
