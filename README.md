@@ -36,5 +36,5 @@ Local edits are stored in `.dev-kv.json` (git-ignored).
 - Save `public/assets/knosh-box-logo.png` and `public/assets/knosh-box-building.jpg`
   (or upload both through the editor after deploy).
 - Set the hero video in the editor (or `heroVideo` in `public/js/config.js`).
-- Set `formEndpoint` in `public/js/config.js` (JSON POST, e.g. Formspree). Until then the form asks people to call.
+- Contact form messages are saved to the site's own storage and read in the editor (Messages tab). Optional: point `formEndpoint` in `public/js/config.js` at an outside service instead.
 - Confirm with the owner: reply-time promise, materials list, "Other" industries.

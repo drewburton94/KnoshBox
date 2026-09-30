@@ -64,6 +64,27 @@ summary .n{font-family:var(--mono);font-weight:400;font-size:11px;color:var(--re
 .frame{border:3px solid var(--ink);border-radius:20px;overflow:hidden;background:#fff;box-shadow:6px 6px 0 var(--red);margin:0 auto;width:100%;transition:width .25s}
 .frame.phone{width:390px;max-width:100%}
 iframe{display:block;width:100%;height:calc(100vh - 170px);min-height:480px;border:0}
+
+.tabs{display:flex;gap:6px}
+.tab{background:transparent;border:2px solid var(--bg);color:var(--bg);border-radius:99px;padding:6px 14px;font-family:var(--mono);font-size:13px}
+.tab[aria-pressed=true]{background:var(--bg);color:var(--ink)}
+.tab b{background:var(--red);color:#fff;border-radius:99px;padding:0 7px;margin-left:6px;font-weight:500}
+.msgs{max-width:820px;margin:0 auto;padding:20px;display:flex;flex-direction:column;gap:14px}
+.msgs h2{margin:0;font-size:30px;letter-spacing:-0.04em}
+.empty{border:2.5px dashed var(--ink);border-radius:18px;padding:28px;color:var(--muted);line-height:1.5}
+.msg{border:2.5px solid var(--ink);border-radius:18px;background:var(--card);padding:16px 18px;display:flex;flex-direction:column;gap:10px}
+.msg.unread{border-color:var(--red);box-shadow:5px 5px 0 var(--red)}
+.msg-top{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:baseline}
+.msg-name{font-weight:800;font-size:20px;letter-spacing:-0.02em}
+.msg-name small{font-weight:400;font-size:14px;color:var(--muted)}
+.msg-date{font-family:var(--mono);font-size:12px;color:var(--muted)}
+.msg-meta{display:flex;gap:8px 18px;flex-wrap:wrap;font-family:var(--mono);font-size:13px}
+.msg-meta a{color:var(--ink)}
+.msg-tags{display:flex;gap:6px;flex-wrap:wrap}
+.msg-tags span{font-family:var(--mono);font-size:11px;border:1.5px solid var(--ink);border-radius:99px;padding:1px 8px}
+.msg-body{margin:0;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.5}
+.msg-actions{display:flex;gap:8px;flex-wrap:wrap}
+.btn.danger{background:var(--red);color:#fff}
 @media (max-width:900px){.layout{grid-template-columns:minmax(0,1fr)}.preview{position:static}iframe{height:70vh}}
 </style>
 </head>
@@ -82,10 +103,12 @@ iframe{display:block;width:100%;height:calc(100vh - 170px);min-height:480px;bord
 <div id="app" hidden>
   <div class="bar">
     <strong>Knosh Box editor</strong>
+    <div class="tabs"><button class="tab" type="button" id="tabSite" aria-pressed="true">Website</button><button class="tab" type="button" id="tabMsgs" aria-pressed="false">Messages<b id="unread" hidden>0</b></button></div>
     <span class="status" id="status" role="status" aria-live="polite">No changes</span>
     <button class="btn" id="save" type="button" disabled>Save changes</button>
   </div>
-  <div class="layout">
+  <div class="msgs" id="msgs" hidden></div>
+  <div class="layout" id="layout">
     <div class="fields" id="fields"></div>
     <div class="preview">
       <div class="pv-top"><span class="mono">Live preview. Changes go live when you save.</span>
@@ -144,6 +167,7 @@ iframe{display:block;width:100%;height:calc(100vh - 170px);min-height:480px;bord
       values = JSON.parse(JSON.stringify(saved));
       $('#lock').hidden = true; $('#app').hidden = false;
       render();
+      loadMessages().catch(function () {});
     });
   }
 
@@ -267,6 +291,62 @@ iframe{display:block;width:100%;height:calc(100vh - 170px);min-height:480px;bord
       st.dataset.msg = '1'; refresh(true); st.className = 'status ok'; st.textContent = 'Saved. The live site is updated.';
     }).catch(function (e) { btn.disabled = false; st.className = 'status dirty'; st.textContent = e.message; });
   });
+
+
+  /* ---- messages ---- */
+  var messages = [];
+  function fmtDate(iso) { try { return new Date(iso).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }); } catch (e) { return iso; } }
+  function el(tag, cls, text) { var n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; }
+  function loadMessages() {
+    return api('/api/messages', JSON.stringify({ action: 'list' })).then(function (r) { messages = r.messages || []; renderMessages(); });
+  }
+  function renderMessages() {
+    var n = messages.filter(function (m) { return !m.read; }).length, b = $('#unread');
+    b.textContent = n; b.hidden = !n;
+    var box = $('#msgs'); box.textContent = '';
+    box.appendChild(el('h2', '', 'Messages from the contact form'));
+    if (!messages.length) { box.appendChild(el('div', 'empty', 'No messages yet. When someone sends the form on the website, it shows up here.')); return; }
+    messages.forEach(function (m) {
+      var card = el('div', 'msg' + (m.read ? '' : ' unread'));
+      var top = el('div', 'msg-top'), nm = el('span', 'msg-name', m.name);
+      if (m.company) { var c = el('small', '', '  ' + m.company); nm.appendChild(c); }
+      top.appendChild(nm); top.appendChild(el('span', 'msg-date', fmtDate(m.date))); card.appendChild(top);
+      var meta = el('div', 'msg-meta');
+      var em = el('a', '', m.email); em.href = 'mailto:' + encodeURIComponent(m.email).replace('%40', '@'); meta.appendChild(em);
+      var ph = el('a', '', m.phone); ph.href = 'tel:' + m.phone.replace(/[^\d+]/g, ''); meta.appendChild(ph);
+      card.appendChild(meta);
+      var tags = el('div', 'msg-tags');
+      [m.service, m.size && 'Area: ' + m.size].forEach(function (t) { if (t) tags.appendChild(el('span', '', t)); });
+      if (tags.childNodes.length) card.appendChild(tags);
+      card.appendChild(el('p', 'msg-body', m.message));
+      var act = el('div', 'msg-actions');
+      var rd = el('button', 'btn ghost', m.read ? 'Mark unread' : 'Mark read'); rd.type = 'button';
+      rd.addEventListener('click', function () {
+        api('/api/messages', JSON.stringify({ action: 'read', id: m.id, read: !m.read })).then(function () { m.read = !m.read; renderMessages(); });
+      });
+      var del = el('button', 'btn ghost', 'Delete'); del.type = 'button';
+      del.addEventListener('click', function () {
+        act.textContent = ''; act.appendChild(el('span', 'hint', 'Delete this message for good?'));
+        var yes = el('button', 'btn ghost danger', 'Yes, delete'); yes.type = 'button';
+        var no = el('button', 'btn ghost', 'Keep'); no.type = 'button';
+        yes.addEventListener('click', function () {
+          api('/api/messages', JSON.stringify({ action: 'delete', id: m.id })).then(function () { messages = messages.filter(function (x) { return x !== m; }); renderMessages(); });
+        });
+        no.addEventListener('click', renderMessages);
+        act.appendChild(yes); act.appendChild(no);
+      });
+      act.appendChild(rd); act.appendChild(del); card.appendChild(act); box.appendChild(card);
+    });
+  }
+  function showTab(name) {
+    var m = name === 'msgs';
+    $('#msgs').hidden = !m; $('#layout').hidden = m;
+    $('#tabMsgs').setAttribute('aria-pressed', m); $('#tabSite').setAttribute('aria-pressed', !m);
+    $('#save').hidden = m; $('#status').hidden = m;
+    if (m) loadMessages().catch(function () {});
+  }
+  $('#tabSite').addEventListener('click', function () { showTab('site'); });
+  $('#tabMsgs').addEventListener('click', function () { showTab('msgs'); });
 
   [].forEach.call(document.querySelectorAll('[data-w]'), function (b) {
     b.addEventListener('click', function () { $('#frame').classList.toggle('phone', b.dataset.w === 'phone'); });

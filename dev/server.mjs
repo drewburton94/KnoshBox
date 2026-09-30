@@ -20,6 +20,7 @@ const KNOSH = {
     if (o.expirationTtl) setTimeout(() => { delete store[k]; }, o.expirationTtl * 1000).unref();
     persist();
   },
+  async list({ prefix = '', limit = 1000 } = {}) { return { keys: Object.keys(store).filter(k => k.startsWith(prefix)).sort().slice(0, limit).map(name => ({ name })) }; },
   async delete(k) { delete store[k]; persist(); },
   async getWithMetadata(k) {
     const e = store[k]; if (!e) return { value: null, metadata: null };
@@ -40,7 +41,7 @@ const env = {
 };
 const routes = [
   [/^\/api\/content$/, 'api/content.js', {}], [/^\/api\/auth$/, 'api/auth.js', {}], [/^\/api\/save$/, 'api/save.js', {}],
-  [/^\/api\/upload$/, 'api/upload.js', {}], [/^\/api\/img\/([^/]+)$/, 'api/img/[id].js', 'id'], [/^\/edit\/([^/]+)$/, 'edit/[token].js', 'token']
+  [/^\/api\/upload$/, 'api/upload.js', {}], [/^\/api\/contact$/, 'api/contact.js', {}], [/^\/api\/messages$/, 'api/messages.js', {}], [/^\/api\/img\/([^/]+)$/, 'api/img/[id].js', 'id'], [/^\/edit\/([^/]+)$/, 'edit/[token].js', 'token']
 ];
 
 http.createServer(async (req, res) => {

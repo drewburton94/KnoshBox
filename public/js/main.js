@@ -103,8 +103,8 @@
       var body = {}; d.forEach(function (v, k) { body[k] = v; });
       btn.disabled = true; btn.textContent = 'Sending…';
       fetch(cfg.formEndpoint, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' }, body: JSON.stringify(body) })
-        .then(function (r) { if (!r.ok) throw new Error(r.status); done(d); })
-        .catch(function () { showErr('Sorry, that didn’t go through.' + phoneMsg); })
+        .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) throw new Error(j.error || ''); done(d); }); })
+        .catch(function (e) { showErr((e.message ? e.message + ' ' : 'Sorry, that didn’t go through.') + phoneMsg); })
         .then(function () { btn.disabled = false; btn.textContent = 'Send message →'; });
     });
     function done(d) {
