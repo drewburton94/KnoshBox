@@ -30,6 +30,7 @@
     pause: '<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg>',
     vol: '<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M3 9v6h4l5 4V5L7 9zm13.5 3a4.5 4.5 0 00-2.5-4v8a4.5 4.5 0 002.5-4zM14 3.2v2.1a7 7 0 010 13.4v2.1a9 9 0 000-17.6z"/></svg>',
     mute: '<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M3 9v6h4l5 4V5L7 9zm13.6 3l2.7-2.7-1.4-1.4-2.7 2.7-2.7-2.7-1.4 1.4 2.7 2.7-2.7 2.7 1.4 1.4 2.7-2.7 2.7 2.7 1.4-1.4z"/></svg>',
+    cc: '<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M19 4H5a2 2 0 00-2 2v12a2 2 0 002 2h14a2 2 0 002-2V6a2 2 0 00-2-2zM11 11H9.5v-.5h-2v3h2V13H11v1a1 1 0 01-1 1H7a1 1 0 01-1-1v-4a1 1 0 011-1h3a1 1 0 011 1zm7 0h-1.5v-.5h-2v3h2V13H18v1a1 1 0 01-1 1h-3a1 1 0 01-1-1v-4a1 1 0 011-1h3a1 1 0 011 1z"/></svg>',
     full: '<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M5 5h5v2H7v3H5zm9 0h5v5h-2V7h-3zM5 14h2v3h3v2H5zm12 0h2v5h-5v-2h3z"/></svg>'
   };
   function mk(tag, cls, html) { var n = document.createElement(tag); if (cls) n.className = cls; if (html) n.innerHTML = html; return n; }
@@ -49,9 +50,10 @@
     var big = mk('button', 'vp-big', ICON.play + '<span>Watch the video</span>'); big.type = 'button'; big.setAttribute('aria-label', 'Play video');
     var bar = mk('div', 'vp-bar'), pp = mk('button', 'vp-btn', ICON.play), mute = mk('button', 'vp-btn', ICON.vol);
     var time = mk('span', 'vp-time mono', '0:00'), seek = mk('input', 'vp-seek'), fs = mk('button', 'vp-btn', ICON.full);
+    var cc = mk('button', 'vp-btn vp-cc', ICON.cc); cc.type = 'button'; cc.hidden = true; cc.setAttribute('aria-label', 'Captions'); cc.setAttribute('aria-pressed', 'false'); cc.title = 'Captions';
     pp.type = mute.type = fs.type = 'button'; pp.setAttribute('aria-label', 'Play or pause'); mute.setAttribute('aria-label', 'Mute or unmute'); fs.setAttribute('aria-label', 'Full screen');
     seek.type = 'range'; seek.min = 0; seek.max = 1000; seek.value = 0; seek.setAttribute('aria-label', 'Seek');
-    bar.appendChild(pp); bar.appendChild(time); bar.appendChild(seek); bar.appendChild(mute);
+    bar.appendChild(pp); bar.appendChild(time); bar.appendChild(seek); bar.appendChild(cc); bar.appendChild(mute);
     var fsTarget = el.parentNode;
     if (fsTarget.requestFullscreen || fsTarget.webkitRequestFullscreen) bar.appendChild(fs);
     [stage, poster, shield, big, bar].forEach(function (n) { wrap.appendChild(n); });
@@ -71,13 +73,13 @@
           var node = mk('div'); stage.appendChild(node);
           player = new window.YT.Player(node, {
             videoId: id, host: 'https://www.youtube-nocookie.com',
-            playerVars: { autoplay: 1, controls: 0, disablekb: 1, fs: 0, iv_load_policy: 3, modestbranding: 1, playsinline: 1, rel: 0 },
+            playerVars: { autoplay: 1, controls: 0, disablekb: 1, fs: 0, iv_load_policy: 3, modestbranding: 1, playsinline: 1, rel: 0, cc_load_policy: 0 },
             events: {
-              onReady: function (e) { e.target.playVideo(); res(); },
+              onReady: function (e) { captionsOff(); e.target.playVideo(); res(); },
               onStateChange: function (e) {
                 var S = window.YT.PlayerState;
                 playing = e.data === S.PLAYING || e.data === S.BUFFERING;
-                if (e.data === S.PLAYING && !counted) { counted = true; track('video_play'); }
+                if (e.data === S.PLAYING && !counted) { counted = true; track('video_play'); captionsOff(); setTimeout(offerCaptions, 600); }
                 if (e.data === S.ENDED) { started = false; player.seekTo(0, true); player.pauseVideo(); }
                 ui();
               }
@@ -86,6 +88,26 @@
         });
       });
     }
+    // Captions start off (YouTube can turn them on from the viewer's own account settings); the CC button opts in.
+    var ccOn = false;
+    function captionsOff() {
+      ccOn = false; cc.setAttribute('aria-pressed', 'false');
+      try { player.unloadModule('captions'); player.unloadModule('cc'); } catch (e) {}
+    }
+    function offerCaptions() {
+      try { cc.hidden = !(player.getOptions() || []).some(function (o) { return o === 'captions' || o === 'cc'; }); } catch (e) { cc.hidden = true; }
+    }
+    cc.addEventListener('click', function () {
+      if (!player) return;
+      ccOn = !ccOn; cc.setAttribute('aria-pressed', String(ccOn));
+      try {
+        if (!ccOn) { player.unloadModule('captions'); player.unloadModule('cc'); return; }
+        player.loadModule('captions'); player.loadModule('cc');
+        var tracks = player.getOption('captions', 'tracklist') || [];
+        var pick = tracks.filter(function (t) { return /^(a\.)?en/i.test(t.languageCode || ''); })[0] || tracks[0];
+        if (pick) player.setOption('captions', 'track', { languageCode: pick.languageCode });
+      } catch (e) {}
+    });
     function toggle() {
       if (!player) { ensure(); return; }
       started = true;

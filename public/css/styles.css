@@ -252,3 +252,41 @@ address{font-style:normal;font-weight:800;font-size:24px;letter-spacing:-0.02em;
 @media (prefers-reduced-motion:reduce){
   .card,.photo,.mat,.shell-tilt,.s-lid{transition:none}
 }
+
+/* ---- interactions: every button lifts on hover (mouse only) and presses in on click ---- */
+.pill,.send,.phone,.chip,.rbtn,.fab,.cta,.linkbtn,.vp-btn,.shelf-head a{transition:transform .15s var(--spring),box-shadow .15s,background-color .15s,color .15s,opacity .2s}
+.cta-pill{display:inline-block;transition:transform .2s var(--spring),background-color .15s}
+.vp-cc[aria-pressed=true]{background:var(--ink);color:var(--bg)}
+@media (hover:hover){
+  .pill:hover{transform:translateY(-2px);box-shadow:0 3px 0 var(--ink)}
+  .pill-dark:hover{background:var(--red);color:#fff}
+  .fab:hover{transform:translate(-2px,-2px)}
+  .cta:hover{transform:translate(-3px,-3px);box-shadow:11px 11px 0 var(--ink)}
+  .cta:hover .cta-pill{transform:translateX(5px);background:var(--tint)}
+  .send:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 8px 0 var(--ink)}
+  .phone:hover{transform:translateY(-2px);box-shadow:0 8px 0 var(--bg)}
+  .chip:hover{transform:translateY(-2px);background:var(--tint);color:var(--ink)}
+  .chip.on:hover{background:var(--ink);color:var(--bg)}
+  .rbtn:hover:not(:disabled):not(.on){transform:translateY(-2px)}
+  .heat:hover:not(:disabled):not(.on){box-shadow:0 8px 0 var(--ink)}
+  .vac:hover:not(:disabled){box-shadow:0 8px 0 var(--ink),inset 0 -6px 12px rgba(120,40,30,.15)}
+  .ej:hover:not(:disabled){box-shadow:0 8px 0 var(--red)}
+  .linkbtn:hover,.shelf-head a:hover{color:var(--red)}
+  .vp-btn:hover{transform:scale(1.1);background:var(--tint)}
+  .vp-cc[aria-pressed=true]:hover{background:var(--ink)}
+}
+.pill:active{transform:translateY(1px);box-shadow:none}
+.fab:active{transform:translate(4px,4px);box-shadow:0 0 0 var(--ink)}
+.chip:active{transform:scale(.95)}
+.linkbtn:active,.shelf-head a:active{transform:translateY(1px)}
+.vp-btn:active{transform:scale(.9)}
+.rbtn:active:not(:disabled){transform:translateY(6px)}
+.heat:active:not(:disabled){box-shadow:0 0 0 var(--ink)}
+@media (prefers-reduced-motion:reduce){.pill,.send,.phone,.chip,.rbtn,.fab,.cta,.cta-pill,.linkbtn,.vp-btn{transition:none}}
+.vp-btn[hidden]{display:none}
+/* press state must beat the hover state while the button is held down */
+.cta:active,.cta:hover:active{transform:translate(8px,8px);box-shadow:0 0 0 var(--ink)}
+.send:active:not(:disabled){transform:translateY(6px);box-shadow:0 0 0 var(--ink)}
+.phone:active{transform:translateY(6px);box-shadow:0 0 0 var(--bg)}
+.vac:active:not(:disabled),.ej:active:not(:disabled){transform:translateY(6px);box-shadow:0 0 0 var(--ink)}
+.pill:active,.chip:active{transform:translateY(1px) scale(.97);box-shadow:none}

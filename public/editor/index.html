@@ -126,6 +126,23 @@ table.data th:first-child,table.data td:first-child{text-align:left}
 .set-form{display:flex;flex-direction:column;gap:14px;max-width:420px}
 .ok{margin:0;padding:10px 14px;border:2.5px solid var(--ink);border-radius:12px;background:#dff3e4;font-size:14px}
 @media (max-width:900px){.layout{grid-template-columns:minmax(0,1fr)}.preview{position:static}iframe{height:70vh}}
+
+/* interactions */
+.btn,.tab,.chip,.reset,summary{transition:transform .15s cubic-bezier(.3,1.6,.4,1),box-shadow .15s,background-color .15s,color .15s}
+@media (hover:hover){
+  .btn:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 7px 0 var(--ink)}
+  .btn.ghost:hover:not(:disabled){background:var(--tint);box-shadow:0 5px 0 var(--ink)}
+  .bar .btn:hover:not(:disabled){box-shadow:0 6px 0 #000}
+  .tab:hover{background:rgba(242,238,230,.18);transform:translateY(-2px)}
+  .tab[aria-pressed=true]:hover{background:var(--bg)}
+  .chip:hover{background:var(--tint);transform:translateY(-2px)}
+  .chip[aria-pressed=true]:hover{background:var(--ink)}
+  .reset:hover{color:var(--red)}
+  summary:hover{background:var(--tint)}
+}
+.btn:active:not(:disabled){transform:translateY(5px);box-shadow:0 0 0 var(--ink)}
+.tab:active,.chip:active{transform:scale(.94)}
+.reset:active{transform:translateY(1px)}
 </style>
 </head>
 <body>
