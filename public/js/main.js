@@ -19,9 +19,10 @@
     if (!id) return;
     var f = document.createElement('iframe');
     f.src = 'https://www.youtube.com/embed/' + id + '?autoplay=1&mute=1&loop=1&playlist=' + id +
-      '&controls=0&modestbranding=1&playsinline=1&rel=0';
+      '&controls=1&modestbranding=1&playsinline=1&rel=0';
     f.title = 'Knosh Box shop video';
-    f.allow = 'autoplay; encrypted-media; picture-in-picture';
+    f.allow = 'autoplay; encrypted-media; picture-in-picture; fullscreen';
+    f.allowFullscreen = true;
     el.appendChild(f);
   }
   function linesOf(el) {

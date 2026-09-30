@@ -40,11 +40,9 @@ button{font:inherit;color:inherit}
 
 /* hero */
 .hero-wrap{padding-top:4px;padding-bottom:0}
-.hero{--hh:clamp(460px,76vh,780px);position:relative;border:3px solid var(--ink);border-radius:34px;overflow:hidden;box-shadow:8px 8px 0 var(--red);background:var(--ink);height:var(--hh)}
-.hero-video iframe{position:absolute;top:50%;left:50%;width:max(100%,calc(var(--hh)*1.7778));aspect-ratio:16/9;transform:translate(-50%,-50%);border:0;pointer-events:none}
-.hero-shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(23,21,18,0) 35%,rgba(23,21,18,.82) 100%);pointer-events:none}
-.hero-copy{position:absolute;left:0;right:0;bottom:0;padding:clamp(24px,4vw,48px);color:#fff}
-.hero h1{margin:0;max-width:760px;font-size:clamp(44px,6.6vw,104px);font-weight:800;letter-spacing:-0.055em;line-height:.88;text-wrap:balance}
+.hero{position:relative;border:3px solid var(--ink);border-radius:34px;overflow:hidden;box-shadow:8px 8px 0 var(--red);background:var(--ink);aspect-ratio:16/9;width:min(100%,calc((100vh - 120px) * 16 / 9));margin:0 auto}
+.hero-video iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+.sr-only{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
 
 /* services */
 .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));gap:22px}
@@ -106,6 +104,9 @@ button{font:inherit;color:inherit}
 .photo{margin:0;border-radius:28px;padding:10px;background:var(--plastic);border:3px solid var(--ink);box-shadow:8px 8px 0 var(--red);transform:rotate(-1.5deg);transition:transform .3s}
 .photo:hover{transform:rotate(0)}
 .photo-in{position:relative;border-radius:18px;overflow:hidden;background:#d9d2c4}
+.people{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:40px;margin-top:64px;max-width:900px;margin-left:auto;margin-right:auto}
+.people .photo{transform:rotate(var(--r))}
+.people .photo:hover{transform:rotate(0)}
 .photo-in img{width:100%;height:auto;aspect-ratio:4/3;object-fit:cover;display:block}
 .photo-sheen{position:absolute;inset:0;background:linear-gradient(125deg,rgba(255,255,255,.35),rgba(255,255,255,0) 30%);pointer-events:none}
 .photo figcaption{display:flex;justify-content:space-between;gap:10px;padding:12px 8px 4px;font-size:12px}
