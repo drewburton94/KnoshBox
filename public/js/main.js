@@ -180,7 +180,38 @@
     var tel = document.querySelector('a.phone');
     if (tel) tel.setAttribute('href', digits.length >= 10 ? 'tel:+' + (digits.length === 10 ? '1' : '') + digits : 'tel:+19897515986');
   }
-  window.KnoshApplyContent = applyContent;
+  window.KnoshApplyContent = function (v) { applyContent(v); fitAll(); };
+
+  /* Titles that would wrap by a hair shrink (down to 70%) to stay on one line. Elements in the same
+     data-fit group share one size, so sibling cards and clamshells stay consistent. */
+  function fitScale(el) {
+    el.style.fontSize = ''; el.style.whiteSpace = ''; el.style.width = '';
+    var base = parseFloat(getComputedStyle(el).fontSize), p = el.parentElement, cs = getComputedStyle(p);
+    var avail = p.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+    if (!avail) return 1;
+    el.style.whiteSpace = 'nowrap'; el.style.width = 'max-content'; // natural one-line width, even for stretched flex items
+    var size = base;
+    while (el.offsetWidth > avail && size > base * 0.7) { size -= 1; el.style.fontSize = size + 'px'; }
+    el.style.fontSize = ''; el.style.whiteSpace = ''; el.style.width = '';
+    return size / base;
+  }
+  var fitQueued = false;
+  function fitAll() {
+    if (fitQueued) return; fitQueued = true;
+    requestAnimationFrame(function () {
+      fitQueued = false;
+      var groups = {};
+      [].forEach.call(document.querySelectorAll('[data-fit]'), function (el) { (groups[el.getAttribute('data-fit')] = groups[el.getAttribute('data-fit')] || []).push(el); });
+      Object.keys(groups).forEach(function (g) {
+        var els = groups[g], scale = Math.min.apply(null, els.map(fitScale));
+        els.forEach(function (el) { if (scale < 1) el.style.fontSize = (parseFloat(getComputedStyle(el).fontSize) * scale) + 'px'; });
+      });
+    });
+  }
+  window.addEventListener('resize', fitAll);
+  window.addEventListener('load', fitAll);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitAll);
+  fitAll();
 
   /* ---- anonymous analytics (no cookies; owner's own browser and the editor preview are skipped) ---- */
   (function () {
@@ -217,7 +248,7 @@
   fetch('/api/content', { headers: { Accept: 'application/json' } })
     .then(function (r) { return r.ok ? r.json() : {}; })
     .catch(function () { return {}; })
-    .then(function (j) { applyContent(j && j.values); });
+    .then(function (j) { applyContent(j && j.values); fitAll(); });
 
   /* clamshells: hover opens on mouse devices, tap/Enter toggles, one open at a time */
   (function () {
