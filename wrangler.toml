@@ -1,8 +1,13 @@
-name = "knosh-box"
-pages_build_output_dir = "public"
+name = "knoshbox"
+main = "worker.js"
 compatibility_date = "2025-01-01"
 
-# Create with: npx wrangler kv namespace create KNOSH  (then paste the id here)
+# The site itself (public/) is served as static assets.
+[assets]
+directory = "./public"
+binding = "ASSETS"
+
+# Where edits and contact-form messages are stored. Wrangler creates this on first deploy.
+# If the deploy complains, create a KV namespace in the dashboard and add: id = "<its id>"
 [[kv_namespaces]]
 binding = "KNOSH"
-id = "REPLACE_WITH_KV_NAMESPACE_ID"

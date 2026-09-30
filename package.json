@@ -4,6 +4,6 @@
   "type": "module",
   "scripts": {
     "dev": "node dev/server.mjs",
-    "deploy": "wrangler pages deploy public"
+    "deploy": "wrangler deploy"
   }
 }
