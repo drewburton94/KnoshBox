@@ -28,6 +28,18 @@ New editable text = add `data-edit="some.key" data-label="Label" data-group="Sec
    Both are required to save. Wrong attempts are limited to 10 per IP per 15 minutes.
    To revoke access, change either secret.
 
+## Email each message to Gmail (optional but recommended)
+Messages are always saved (editor > Messages). To also get them by email:
+1. Make a free account at https://resend.com using the Gmail address that should receive them.
+2. Resend > API Keys > Create API Key (permission: sending). Copy it.
+3. In Cloudflare Pages > Settings > Variables and Secrets add:
+   - `RESEND_API_KEY` (secret): the key
+   - `NOTIFY_EMAIL`: that Gmail address (several allowed, comma-separated)
+4. Redeploy. Emails arrive from "Knosh Box Website" and Reply goes straight to the customer.
+Without a verified domain, Resend only delivers to the address the account was created with.
+To send from your own domain or to other addresses, verify knoshbox.com in Resend and set
+`MAIL_FROM` (e.g. `Knosh Box <website@knoshbox.com>`).
+
 ## Run locally
 `npm run dev` then open http://localhost:8788 (editor: `/edit/dev-token`, password `dev-password`).
 Local edits are stored in `.dev-kv.json` (git-ignored).

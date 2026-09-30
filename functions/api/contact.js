@@ -32,8 +32,43 @@ export async function onRequestPost({ request, env }) {
     [...crypto.getRandomValues(new Uint8Array(4))].map(x => x.toString(16).padStart(2, '0')).join('');
   await env.KNOSH.put(id, JSON.stringify({ ...m, date: new Date(now).toISOString(), read: false }));
 
+  await notify(env, m);
+
   // keep storage bounded: drop the oldest beyond MAX_STORED
   const all = await env.KNOSH.list({ prefix: 'msg:', limit: 1000 });
   for (const k of all.keys.slice(MAX_STORED)) await env.KNOSH.delete(k.name);
   return json({ ok: true });
+}
+
+// Emails the message to NOTIFY_EMAIL through Resend (https://resend.com). Best effort:
+// the message is already saved, so a failed email never fails the visitor's submission.
+async function notify(env, m) {
+  if (!env.RESEND_API_KEY || !env.NOTIFY_EMAIL) return;
+  const clean = v => String(v).replace(/[\r\n]+/g, ' ').slice(0, 120);
+  const text = [
+    'New message from the Knosh Box website',
+    '',
+    'Name:    ' + m.name,
+    'Company: ' + (m.company || '-'),
+    'Email:   ' + m.email,
+    'Phone:   ' + m.phone,
+    'Need:    ' + (m.service || '-'),
+    'Area:    ' + (m.size || '-'),
+    '',
+    m.message
+  ].join('\n');
+  try {
+    const r = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer ' + env.RESEND_API_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        from: env.MAIL_FROM || 'Knosh Box Website <onboarding@resend.dev>',
+        to: env.NOTIFY_EMAIL.split(',').map(x => x.trim()).filter(Boolean),
+        reply_to: m.email,
+        subject: 'Website message from ' + clean(m.name) + (m.company ? ' (' + clean(m.company) + ')' : ''),
+        text
+      })
+    });
+    if (!r.ok) console.error('Resend error', r.status, await r.text());
+  } catch (e) { console.error('Resend failed', e); }
 }
