@@ -6,12 +6,16 @@ import * as save from './functions/api/save.js';
 import * as upload from './functions/api/upload.js';
 import * as contact from './functions/api/contact.js';
 import * as messages from './functions/api/messages.js';
+import * as track from './functions/api/track.js';
+import * as stats from './functions/api/stats.js';
+import * as settings from './functions/api/settings.js';
 import * as img from './functions/api/img/[id].js';
 import * as edit from './functions/edit/[token].js';
 
 const routes = [
   [/^\/api\/content$/, content], [/^\/api\/auth$/, auth], [/^\/api\/save$/, save],
   [/^\/api\/upload$/, upload], [/^\/api\/contact$/, contact], [/^\/api\/messages$/, messages],
+  [/^\/api\/track$/, track], [/^\/api\/stats$/, stats], [/^\/api\/settings$/, settings],
   [/^\/api\/img\/([^/]+)$/, img, 'id'], [/^\/edit\/([^/]+)$/, edit, 'token']
 ];
 

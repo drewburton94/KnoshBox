@@ -1,4 +1,4 @@
-import { json } from '../_lib/util.js';
+import { json, bump } from '../_lib/util.js';
 
 // Public: stores a contact-form message in KV. Keys sort newest-first (reversed timestamp).
 const MAX = { name: 120, company: 160, email: 200, phone: 60, service: 60, size: 60, message: 4000 };
@@ -32,6 +32,7 @@ export async function onRequestPost({ request, env }) {
     [...crypto.getRandomValues(new Uint8Array(4))].map(x => x.toString(16).padStart(2, '0')).join('');
   await env.KNOSH.put(id, JSON.stringify({ ...m, date: new Date(now).toISOString(), read: false }));
 
+  try { await bump(env, { e: 'message' }); } catch (e) {}
   await notify(env, m);
 
   // keep storage bounded: drop the oldest beyond MAX_STORED

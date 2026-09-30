@@ -28,6 +28,19 @@ New editable text = add `data-edit="some.key" data-label="Label" data-group="Sec
    Both are required to save. Wrong attempts are limited to 10 per IP per 15 minutes.
    To revoke access, change either secret.
 
+## Editor tabs
+- **Website**: edit text, hero video, photos (live preview; nothing changes until Save).
+- **Messages**: contact-form messages saved by the site.
+- **Analytics**: visits, visitors, messages, video plays, phone taps, "Contact us" clicks, sources, phone vs computer.
+  Anonymous, no cookies, stored as one small KV record per day. Your own browser and the editor preview are not counted.
+  KV's free plan allows ~1,000 writes/day (each visit is one write), which is plenty for a small shop; tracking fails silently beyond that and never breaks the site.
+- **Settings**: change the editing password (stored salted + hashed in KV, replaces `EDIT_PASSWORD`).
+  Forgot it? Delete the KV entry `cfg:auth` and `EDIT_PASSWORD` works again.
+
+## Hero video
+Visitors see a poster with our own play button and controls. The YouTube player itself is fully covered, so the title,
+channel name and YouTube links can't be clicked. Clicking the video toggles play/pause.
+
 ## Email each message to Gmail (optional but recommended)
 Messages are always saved (editor > Messages). To also get them by email:
 1. Make a free account at https://resend.com using the Gmail address that should receive them.

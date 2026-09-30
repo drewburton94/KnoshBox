@@ -17,7 +17,7 @@ const KNOSH = {
   async get(k) { const e = store[k]; return e && e.t === 's' ? e.v : (e ? Buffer.from(e.v, 'base64').toString() : null); },
   async put(k, v, o = {}) {
     store[k] = v instanceof ArrayBuffer ? { t: 'b', v: Buffer.from(v).toString('base64'), m: o.metadata } : { t: 's', v: String(v) };
-    if (o.expirationTtl) setTimeout(() => { delete store[k]; }, o.expirationTtl * 1000).unref();
+    if (o.expirationTtl && o.expirationTtl < 86400 * 20) setTimeout(() => { delete store[k]; }, o.expirationTtl * 1000).unref();
     persist();
   },
   async list({ prefix = '', limit = 1000 } = {}) { return { keys: Object.keys(store).filter(k => k.startsWith(prefix)).sort().slice(0, limit).map(name => ({ name })) }; },
@@ -41,7 +41,7 @@ const env = {
 };
 const routes = [
   [/^\/api\/content$/, 'api/content.js', {}], [/^\/api\/auth$/, 'api/auth.js', {}], [/^\/api\/save$/, 'api/save.js', {}],
-  [/^\/api\/upload$/, 'api/upload.js', {}], [/^\/api\/contact$/, 'api/contact.js', {}], [/^\/api\/messages$/, 'api/messages.js', {}], [/^\/api\/img\/([^/]+)$/, 'api/img/[id].js', 'id'], [/^\/edit\/([^/]+)$/, 'edit/[token].js', 'token']
+  [/^\/api\/upload$/, 'api/upload.js', {}], [/^\/api\/contact$/, 'api/contact.js', {}], [/^\/api\/messages$/, 'api/messages.js', {}], [/^\/api\/track$/, 'api/track.js', {}], [/^\/api\/stats$/, 'api/stats.js', {}], [/^\/api\/settings$/, 'api/settings.js', {}], [/^\/api\/img\/([^/]+)$/, 'api/img/[id].js', 'id'], [/^\/edit\/([^/]+)$/, 'edit/[token].js', 'token']
 ];
 
 http.createServer(async (req, res) => {

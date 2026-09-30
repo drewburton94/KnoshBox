@@ -85,6 +85,46 @@ iframe{display:block;width:100%;height:calc(100vh - 170px);min-height:480px;bord
 .msg-body{margin:0;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.5}
 .msg-actions{display:flex;gap:8px;flex-wrap:wrap}
 .btn.danger{background:var(--red);color:#fff}
+
+.panel{max-width:920px;margin:0 auto;padding:20px;display:flex;flex-direction:column;gap:18px}
+.panel h2{margin:0;font-size:30px;letter-spacing:-0.04em}
+.panel h3{margin:0;font-size:18px;letter-spacing:-0.02em}
+.panel p.note{margin:0;color:var(--muted);line-height:1.5;font-size:14px}
+.range{display:flex;gap:6px;flex-wrap:wrap}
+.chip{border:2px solid var(--ink);border-radius:99px;background:var(--card);padding:6px 14px;font-family:var(--mono);font-size:13px}
+.chip[aria-pressed=true]{background:var(--ink);color:var(--bg)}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,190px),1fr));gap:12px}
+.tile{border:2.5px solid var(--ink);border-radius:18px;background:var(--card);padding:14px 16px;display:flex;flex-direction:column;gap:4px}
+.tile .t-l{font-family:var(--mono);font-size:12px;letter-spacing:.06em;text-transform:uppercase}
+.tile .t-n{font-size:40px;font-weight:800;letter-spacing:-0.04em;line-height:1;font-variant-numeric:tabular-nums}
+.tile .t-d{font-family:var(--mono);font-size:11px;color:var(--muted)}
+.tile .t-d.up{color:var(--ok)}
+.card2{border:2.5px solid var(--ink);border-radius:18px;background:var(--card);padding:16px 18px;display:flex;flex-direction:column;gap:12px}
+.card2-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.chart{position:relative;display:flex;align-items:flex-end;gap:2px;height:180px;padding-top:8px;border-bottom:2px solid var(--ink);background:linear-gradient(to top,transparent calc(50% - 1px),rgba(23,21,18,.08) 50%,transparent calc(50% + 1px))}
+.dbar{flex:1;min-width:2px;background:var(--red);border-radius:4px 4px 0 0;min-height:2px;position:relative;outline:none}
+.dbar.zero{background:var(--line)}
+.dbar:hover,.dbar:focus-visible{background:var(--ink)}
+.dbar .tip{display:none;position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);background:var(--ink);color:var(--bg);font-family:var(--mono);font-size:11px;padding:5px 8px;border-radius:8px;white-space:nowrap;z-index:5;pointer-events:none}
+.dbar:hover .tip,.dbar:focus-visible .tip{display:block}
+.chart-axis{display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;color:var(--muted)}
+.ymax{position:absolute;left:0;top:-2px;font-family:var(--mono);font-size:11px;color:var(--muted)}
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:14px}
+.rows{display:flex;flex-direction:column;gap:8px;margin:0;padding:0;list-style:none}
+.rows li{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 12px;font-size:14px}
+.rows .meter{grid-column:1/-1;height:6px;border-radius:99px;background:var(--line);overflow:hidden}
+.rows .meter i{display:block;height:100%;background:var(--red);border-radius:99px}
+.rows .v{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.split{display:flex;height:14px;border-radius:99px;overflow:hidden;gap:2px}
+.split i{display:block;min-width:2px}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-family:var(--mono);font-size:12px}
+.legend b{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:-1px}
+table.data{width:100%;border-collapse:collapse;font-size:13px;font-family:var(--mono);font-variant-numeric:tabular-nums}
+table.data th,table.data td{text-align:right;padding:5px 8px;border-bottom:1px solid var(--line)}
+table.data th:first-child,table.data td:first-child{text-align:left}
+.tablewrap{max-height:320px;overflow:auto}
+.set-form{display:flex;flex-direction:column;gap:14px;max-width:420px}
+.ok{margin:0;padding:10px 14px;border:2.5px solid var(--ink);border-radius:12px;background:#dff3e4;font-size:14px}
 @media (max-width:900px){.layout{grid-template-columns:minmax(0,1fr)}.preview{position:static}iframe{height:70vh}}
 </style>
 </head>
@@ -103,18 +143,52 @@ iframe{display:block;width:100%;height:calc(100vh - 170px);min-height:480px;bord
 <div id="app" hidden>
   <div class="bar">
     <strong>Knosh Box editor</strong>
-    <div class="tabs"><button class="tab" type="button" id="tabSite" aria-pressed="true">Website</button><button class="tab" type="button" id="tabMsgs" aria-pressed="false">Messages<b id="unread" hidden>0</b></button></div>
+    <div class="tabs"><button class="tab" type="button" id="tabSite" aria-pressed="true">Website</button><button class="tab" type="button" id="tabMsgs" aria-pressed="false">Messages<b id="unread" hidden>0</b></button><button class="tab" type="button" id="tabStats" aria-pressed="false">Analytics</button><button class="tab" type="button" id="tabSettings" aria-pressed="false">Settings</button></div>
     <span class="status" id="status" role="status" aria-live="polite">No changes</span>
     <button class="btn" id="save" type="button" disabled>Save changes</button>
   </div>
   <div class="msgs" id="msgs" hidden></div>
+  <div class="panel" id="stats" hidden>
+    <h2>Website activity</h2>
+    <div class="range" id="range"></div>
+    <div class="tiles" id="tiles"></div>
+    <div class="card2">
+      <div class="card2-head"><h3>Visits per day</h3><button class="btn ghost" type="button" id="tblToggle">View as table</button></div>
+      <div id="chartBox"></div>
+    </div>
+    <div class="cols">
+      <div class="card2"><h3>Where visitors came from</h3><ul class="rows" id="refs"></ul></div>
+      <div class="card2"><h3>Phone or computer</h3><div id="devs"></div></div>
+    </div>
+    <p class="note">Counts are anonymous and use no cookies. “Visitors” means different browsers per day, so it is approximate. Visits from the browser you edit with are not counted. Days use Michigan time.</p>
+  </div>
+  <div class="panel" id="settings" hidden>
+    <h2>Settings</h2>
+    <div class="card2">
+      <h3>Change the editing password</h3>
+      <p class="note" id="pwInfo">Pick a new password for this editor. The secret link stays the same. Use at least 10 characters.</p>
+      <form class="set-form" id="pwForm">
+        <label class="f"><span class="lab">New password</span><input type="password" id="pw1" autocomplete="new-password" minlength="10" required></label>
+        <label class="f"><span class="lab">Type it again</span><input type="password" id="pw2" autocomplete="new-password" minlength="10" required></label>
+        <p class="err" id="pwErr" role="alert" hidden></p>
+        <p class="ok" id="pwOk" role="status" hidden></p>
+        <button class="btn" type="submit" id="pwBtn">Change password</button>
+      </form>
+    </div>
+    <div class="card2">
+      <h3>Good to know</h3>
+      <p class="note">The secret link is set in Cloudflare as the variable <b>EDIT_TOKEN</b>. To change the link, change that value there and deploy again.</p>
+      <p class="note">If you forget a password you changed here, open Cloudflare &gt; Storage &amp; Databases &gt; KV &gt; your namespace, delete the entry named <b>cfg:auth</b>, and the original <b>EDIT_PASSWORD</b> works again.</p>
+      <div><button class="btn ghost" type="button" id="signOut">Sign out</button></div>
+    </div>
+  </div>
   <div class="layout" id="layout">
     <div class="fields" id="fields"></div>
     <div class="preview">
       <div class="pv-top"><span class="mono">Live preview. Changes go live when you save.</span>
         <button class="btn ghost" type="button" data-w="desktop">Desktop</button>
         <button class="btn ghost" type="button" data-w="phone">Phone</button></div>
-      <div class="frame" id="frame"><iframe id="pv" src="/" title="Website preview"></iframe></div>
+      <div class="frame" id="frame"><iframe id="pv" src="/?preview=1" title="Website preview"></iframe></div>
     </div>
   </div>
 </div>
@@ -161,10 +235,11 @@ iframe{display:block;width:100%;height:calc(100vh - 170px);min-height:480px;bord
         else if (type === 'lines') def = [].map.call(el.childNodes, function (n) { return n.nodeName === 'BR' ? '\n' : n.textContent; }).join('');
         else def = el.textContent;
         defaults[key] = def;
-        fields.push({ key: key, label: el.getAttribute('data-label') || key, group: el.getAttribute('data-group') || 'Other', type: type });
+        fields.push({ key: key, label: el.getAttribute('data-label') || key, group: el.getAttribute('data-group') || 'Other', type: type, long: el.hasAttribute('data-long') });
       });
       saved = res[1].values || {};
       values = JSON.parse(JSON.stringify(saved));
+      try { localStorage.setItem('kb_notrack', '1'); } catch (e) {}
       $('#lock').hidden = true; $('#app').hidden = false;
       render();
       loadMessages().catch(function () {});
@@ -212,7 +287,7 @@ iframe{display:block;width:100%;height:calc(100vh - 170px);min-height:480px;bord
           .catch(function (e) { hint.textContent = e.message; hint.className = 'hint bad'; });
       });
     } else {
-      var long = f.type === 'lines' || (defaults[f.key] || '').length > 55;
+      var long = f.long || f.type === 'lines' || (defaults[f.key] || '').length > 55;
       var inp = document.createElement(long ? 'textarea' : 'input');
       if (!long) inp.type = 'text';
       if (long) inp.rows = f.type === 'lines' ? 2 : Math.min(6, Math.ceil((defaults[f.key] || '').length / 48));
@@ -338,15 +413,105 @@ iframe{display:block;width:100%;height:calc(100vh - 170px);min-height:480px;bord
       act.appendChild(rd); act.appendChild(del); card.appendChild(act); box.appendChild(card);
     });
   }
+
+  /* ---- analytics ---- */
+  var rangeDays = 30, statDays = null, showTable = false;
+  var EV = [['v', 'Visits'], ['u', 'Visitors'], ['message', 'Messages sent'], ['video_play', 'Video plays'], ['call', 'Phone taps'], ['contact_click', '“Contact us” clicks']];
+  function val(d, k) { return k === 'v' || k === 'u' ? d[k] : (d.e[k] || 0); }
+  function sum(arr, k) { return arr.reduce(function (a, d) { return a + val(d, k); }, 0); }
+  function fmtDay(iso) { var p = iso.split('-'); return new Date(+p[0], +p[1] - 1, +p[2]).toLocaleDateString([], { month: 'short', day: 'numeric' }); }
+  function loadStats() {
+    return api('/api/stats', JSON.stringify({ days: rangeDays * 2 })).then(function (r) { statDays = r.days; renderStats(); });
+  }
+  function renderStats() {
+    var r = $('#range'); r.textContent = '';
+    [7, 30, 90].forEach(function (n) {
+      var b = el('button', 'chip', 'Last ' + n + ' days'); b.type = 'button'; b.setAttribute('aria-pressed', n === rangeDays);
+      b.addEventListener('click', function () { rangeDays = n; loadStats().catch(function () {}); }); r.appendChild(b);
+    });
+    var cur = statDays.slice(-rangeDays), prev = statDays.slice(0, statDays.length - rangeDays);
+    var tiles = $('#tiles'); tiles.textContent = '';
+    EV.forEach(function (x) {
+      var a = sum(cur, x[0]), p = sum(prev, x[0]), t = el('div', 'tile');
+      t.appendChild(el('span', 't-l', x[1])); t.appendChild(el('span', 't-n', String(a)));
+      var dl = el('span', 't-d');
+      if (!p && !a) dl.textContent = 'none yet';
+      else if (!p) { dl.textContent = 'new this period'; dl.className = 't-d up'; }
+      else { var pct = Math.round((a - p) / p * 100); dl.textContent = (pct > 0 ? '+' : '') + pct + '% vs previous ' + rangeDays + ' days'; if (pct > 0) dl.className = 't-d up'; }
+      t.appendChild(dl); tiles.appendChild(t);
+    });
+    // daily visits chart (single series, one hue) with a table alternative
+    var box = $('#chartBox'); box.textContent = '';
+    $('#tblToggle').textContent = showTable ? 'View as chart' : 'View as table';
+    if (showTable) {
+      var wrap = el('div', 'tablewrap'), tb = el('table', 'data'), hd = el('tr');
+      ['Day', 'Visits', 'Visitors', 'Messages'].forEach(function (h) { hd.appendChild(el('th', '', h)); });
+      tb.appendChild(hd);
+      cur.slice().reverse().forEach(function (d) {
+        var tr = el('tr'); [fmtDay(d.date), d.v, d.u, d.e.message || 0].forEach(function (c) { tr.appendChild(el('td', '', String(c))); }); tb.appendChild(tr);
+      });
+      wrap.appendChild(tb); box.appendChild(wrap);
+    } else {
+      var max = Math.max.apply(null, cur.map(function (d) { return d.v; }).concat([1]));
+      var ch = el('div', 'chart'); ch.setAttribute('role', 'img'); ch.setAttribute('aria-label', 'Bar chart of visits per day. Use the table view for exact numbers.');
+      ch.appendChild(el('span', 'ymax', String(max)));
+      cur.forEach(function (d) {
+        var b = el('div', 'dbar' + (d.v ? '' : ' zero')); b.style.height = (d.v / max * 100) + '%'; b.tabIndex = 0;
+        b.appendChild(el('span', 'tip', fmtDay(d.date) + ': ' + d.v + ' visit' + (d.v === 1 ? '' : 's') + ', ' + d.u + ' visitor' + (d.u === 1 ? '' : 's')));
+        ch.appendChild(b);
+      });
+      box.appendChild(ch);
+      var ax = el('div', 'chart-axis'); ax.appendChild(el('span', '', fmtDay(cur[0].date))); ax.appendChild(el('span', '', fmtDay(cur[cur.length - 1].date))); box.appendChild(ax);
+    }
+    // referrers
+    var refs = {}, dev = { mobile: 0, desktop: 0 };
+    cur.forEach(function (d) { for (var k in d.r) refs[k] = (refs[k] || 0) + d.r[k]; dev.mobile += d.d.mobile || 0; dev.desktop += d.d.desktop || 0; });
+    var list = Object.keys(refs).sort(function (a, b) { return refs[b] - refs[a]; }).slice(0, 8), ul = $('#refs'); ul.textContent = '';
+    if (!list.length) ul.appendChild(el('li', '', 'No visits yet in this period.'));
+    list.forEach(function (k) {
+      var li = el('li'); li.appendChild(el('span', '', k === 'direct' ? 'Direct or unknown' : k)); li.appendChild(el('span', 'v', String(refs[k])));
+      var m = el('span', 'meter'), i = el('i'); i.style.width = (refs[k] / refs[list[0]] * 100) + '%'; m.appendChild(i); li.appendChild(m); ul.appendChild(li);
+    });
+    var dv = $('#devs'); dv.textContent = '';
+    var tot = dev.mobile + dev.desktop;
+    if (!tot) dv.appendChild(el('p', 'note', 'No visits yet in this period.'));
+    else {
+      var sp = el('div', 'split'), a = el('i'), b2 = el('i');
+      a.style.cssText = 'background:var(--red);flex:' + dev.mobile; b2.style.cssText = 'background:var(--ink);flex:' + dev.desktop;
+      if (dev.mobile) sp.appendChild(a); if (dev.desktop) sp.appendChild(b2); dv.appendChild(sp);
+      var lg = el('div', 'legend'); lg.style.marginTop = '12px';
+      [['Phone', dev.mobile, 'var(--red)'], ['Computer or tablet', dev.desktop, 'var(--ink)']].forEach(function (x) {
+        var s2 = el('span'); var dot = el('b'); dot.style.background = x[2]; s2.appendChild(dot); s2.appendChild(document.createTextNode(x[0] + ': ' + x[1] + ' (' + Math.round(x[1] / tot * 100) + '%)')); lg.appendChild(s2);
+      }); dv.appendChild(lg);
+    }
+  }
+  $('#tblToggle').addEventListener('click', function () { showTable = !showTable; if (statDays) renderStats(); });
+
+  /* ---- settings ---- */
+  $('#pwForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var a = $('#pw1').value, b = $('#pw2').value, err = $('#pwErr'), ok = $('#pwOk');
+    err.hidden = ok.hidden = true;
+    if (a !== b) { err.textContent = 'The two passwords don’t match.'; err.hidden = false; return; }
+    $('#pwBtn').disabled = true;
+    api('/api/settings', JSON.stringify({ action: 'password', newPassword: a })).then(function () {
+      password = a; $('#pwForm').reset(); ok.textContent = 'Password changed. Use the new one next time you sign in.'; ok.hidden = false;
+    }).catch(function (x) { err.textContent = x.message; err.hidden = false; }).then(function () { $('#pwBtn').disabled = false; });
+  });
+  $('#signOut').addEventListener('click', function () { password = ''; location.reload(); });
+
   function showTab(name) {
-    var m = name === 'msgs';
-    $('#msgs').hidden = !m; $('#layout').hidden = m;
-    $('#tabMsgs').setAttribute('aria-pressed', m); $('#tabSite').setAttribute('aria-pressed', !m);
-    $('#save').hidden = m; $('#status').hidden = m;
-    if (m) loadMessages().catch(function () {});
+    var views = { site: '#layout', msgs: '#msgs', stats: '#stats', settings: '#settings' };
+    var tabs = { site: '#tabSite', msgs: '#tabMsgs', stats: '#tabStats', settings: '#tabSettings' };
+    Object.keys(views).forEach(function (k) { $(views[k]).hidden = k !== name; $(tabs[k]).setAttribute('aria-pressed', k === name); });
+    $('#save').hidden = name !== 'site'; $('#status').hidden = name !== 'site';
+    if (name === 'msgs') loadMessages().catch(function () {});
+    if (name === 'stats') loadStats().catch(function () {});
   }
   $('#tabSite').addEventListener('click', function () { showTab('site'); });
   $('#tabMsgs').addEventListener('click', function () { showTab('msgs'); });
+  $('#tabStats').addEventListener('click', function () { showTab('stats'); });
+  $('#tabSettings').addEventListener('click', function () { showTab('settings'); });
 
   [].forEach.call(document.querySelectorAll('[data-w]'), function (b) {
     b.addEventListener('click', function () { $('#frame').classList.toggle('phone', b.dataset.w === 'phone'); });
