@@ -1,7 +1,7 @@
 import { json, bump } from '../_lib/util.js';
 
 // Public: stores a contact-form message in KV. Keys sort newest-first (reversed timestamp).
-const MAX = { name: 120, company: 160, email: 200, phone: 60, service: 60, size: 60, message: 4000 };
+const MAX = { name: 120, company: 160, email: 200, phone: 60, service: 60, message: 4000 };
 const LIMIT_PER_HOUR = 5;
 const MAX_STORED = 500;
 
@@ -54,7 +54,6 @@ async function notify(env, m) {
     'Email:   ' + m.email,
     'Phone:   ' + m.phone,
     'Need:    ' + (m.service || '-'),
-    'Area:    ' + (m.size || '-'),
     '',
     m.message
   ].join('\n');
