@@ -1,0 +1,4 @@
+.dev-kv.json
+node_modules/
+.wrangler/
+.dev.vars

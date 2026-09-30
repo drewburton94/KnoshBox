@@ -1,0 +1,8 @@
+name = "knosh-box"
+pages_build_output_dir = "public"
+compatibility_date = "2025-01-01"
+
+# Create with: npx wrangler kv namespace create KNOSH  (then paste the id here)
+[[kv_namespaces]]
+binding = "KNOSH"
+id = "REPLACE_WITH_KV_NAMESPACE_ID"

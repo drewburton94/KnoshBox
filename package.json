@@ -1,0 +1,9 @@
+{
+  "name": "knosh-box",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node dev/server.mjs",
+    "deploy": "wrangler pages deploy public"
+  }
+}

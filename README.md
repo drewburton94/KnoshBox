@@ -1,18 +1,40 @@
 # Knosh Box website
 
-Static single-page site (no build step): `index.html`, `css/styles.css`, `js/`.
-Built from the Claude Design handoff (`Knosh Box D - Formed`).
+Static single-page site in `public/` (no build step) plus a small Cloudflare Pages Functions
+backend in `functions/` that powers a private editor for text, the hero video and photos.
 
-## Before launch
-1. **Images** — save into `assets/`:
-   - `knosh-box-logo.png` (header logo)
-   - `knosh-box-building.jpg` (About photo, ~1500px wide)
-   (Originals are on the Squarespace CDN; URLs are in the design handoff.)
-2. **`js/config.js`**
-   - `heroVideo`: YouTube link or ID for the hero.
-   - `formEndpoint`: JSON POST endpoint (Formspree, Resend function, etc.). Until set, the form shows a "please call us" message.
-3. Confirm with the owner: reply-time promise, materials list, "Other" industries.
+```
+public/            the site (index.html, css/, js/, assets/) and the editor page (editor/)
+functions/api/     content, save, upload, img/[id], auth
+functions/edit/    the secret link: /edit/<EDIT_TOKEN>
+dev/server.mjs     local emulator of Pages + Functions + KV
+```
+
+## How editing works
+Default copy lives in `public/index.html` (elements tagged `data-edit="key"`). Edits are saved
+as overrides in Cloudflare KV and applied on page load from `/api/content`. Anything not
+edited keeps its HTML default, and **Reset** in the editor returns a field to it.
+Editable: all page text, hero video (YouTube link), header logo, About photo.
+New editable text = add `data-edit="some.key" data-label="Label" data-group="Section"` to any element.
+
+## Deploy on Cloudflare Pages
+1. `npx wrangler kv namespace create KNOSH`, paste the returned `id` into `wrangler.toml`
+   (or bind the namespace as `KNOSH` in the Pages dashboard: Settings > Bindings).
+2. Set two secrets (dashboard: Settings > Variables and Secrets, or `npx wrangler pages secret put NAME`):
+   - `EDIT_TOKEN`: the secret part of the link. Generate with `openssl rand -hex 16`.
+   - `EDIT_PASSWORD`: a strong password.
+3. Deploy: `npm run deploy` (or connect the repo with build output directory `public`, no build command).
+4. Editor link: `https://knoshbox.com/edit/<EDIT_TOKEN>`, then enter the password.
+   Both are required to save. Wrong attempts are limited to 10 per IP per 15 minutes.
+   To revoke access, change either secret.
 
 ## Run locally
-`python3 -m http.server 8000` then open http://localhost:8000
-Deploys as-is to Netlify, Vercel, Cloudflare Pages, GitHub Pages, etc.
+`npm run dev` then open http://localhost:8788 (editor: `/edit/dev-token`, password `dev-password`).
+Local edits are stored in `.dev-kv.json` (git-ignored).
+
+## Still to do before launch
+- Save `public/assets/knosh-box-logo.png` and `public/assets/knosh-box-building.jpg`
+  (or upload both through the editor after deploy).
+- Set the hero video in the editor (or `heroVideo` in `public/js/config.js`).
+- Set `formEndpoint` in `public/js/config.js` (JSON POST, e.g. Formspree). Until then the form asks people to call.
+- Confirm with the owner: reply-time promise, materials list, "Other" industries.
