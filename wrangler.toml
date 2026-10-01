@@ -2,6 +2,10 @@ name = "knoshbox"
 main = "worker.js"
 compatibility_date = "2025-01-01"
 
+# Keep variables set in the Cloudflare dashboard (TURNSTILE_SITE_KEY, NOTIFY_EMAIL, ...) when this repo deploys.
+# Without this, a deploy from GitHub would wipe plain-text variables that are not listed here.
+keep_vars = true
+
 # The site itself (public/) is served as static assets.
 [assets]
 directory = "./public"
