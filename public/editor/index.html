@@ -114,6 +114,8 @@ iframe{display:block;width:100%;height:calc(100vh - 170px);min-height:480px;bord
 .cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:14px}
 .rows{display:flex;flex-direction:column;gap:8px;margin:0;padding:0;list-style:none}
 .rows li{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 12px;font-size:14px}
+#statusList li{grid-template-columns:minmax(0,200px) minmax(0,1fr)}
+#statusList .v{text-align:left;font-size:13px;overflow-wrap:anywhere}
 .rows .meter{grid-column:1/-1;height:6px;border-radius:99px;background:var(--line);overflow:hidden}
 .rows .meter i{display:block;height:100%;background:var(--red);border-radius:99px}
 .rows .v{font-family:var(--mono);font-variant-numeric:tabular-nums}
@@ -193,6 +195,11 @@ table.data th:first-child,table.data td:first-child{text-align:left}
         <p class="ok" id="pwOk" role="status" hidden></p>
         <button class="btn" type="submit" id="pwBtn">Change password</button>
       </form>
+    </div>
+    <div class="card2">
+      <h3>Status</h3>
+      <ul class="rows" id="statusList"><li>Checking…</li></ul>
+      <p class="note">These are set in Cloudflare (worker &gt; Settings &gt; Variables and Secrets). See the README for the names.</p>
     </div>
     <div class="card2">
       <h3>Good to know</h3>
@@ -518,6 +525,16 @@ table.data th:first-child,table.data td:first-child{text-align:left}
       password = a; $('#pwForm').reset(); ok.textContent = 'Password changed. Use the new one next time you sign in.'; ok.hidden = false;
     }).catch(function (x) { err.textContent = x.message; err.hidden = false; }).then(function () { $('#pwBtn').disabled = false; });
   });
+  function loadStatus() {
+    api('/api/settings', JSON.stringify({ action: 'info' })).then(function (r) {
+      var ul = $('#statusList'); ul.textContent = '';
+      [['Contact form emails', r.emailOn ? 'On, sending to ' + r.emailTo.join(', ') : 'Off (messages are still saved in the Messages tab)'],
+       ['Bot protection (Turnstile)', r.botProtection ? 'On' : 'Off (only the basic spam filters are active)'],
+       ['Editing password', r.customPassword ? 'Changed in this editor' : 'Original password from Cloudflare']].forEach(function (x) {
+        var li = el('li'); li.appendChild(el('span', '', x[0])); li.appendChild(el('span', 'v', x[1])); ul.appendChild(li);
+      });
+    }).catch(function () {});
+  }
   $('#signOut').addEventListener('click', function () { password = ''; location.reload(); });
 
   function showTab(name) {
@@ -527,6 +544,7 @@ table.data th:first-child,table.data td:first-child{text-align:left}
     $('#save').hidden = name !== 'site'; $('#status').hidden = name !== 'site';
     if (name === 'msgs') loadMessages().catch(function () {});
     if (name === 'stats') loadStats().catch(function () {});
+    if (name === 'settings') loadStatus();
   }
   $('#tabSite').addEventListener('click', function () { showTab('site'); });
   $('#tabMsgs').addEventListener('click', function () { showTab('msgs'); });

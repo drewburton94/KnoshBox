@@ -4,6 +4,8 @@ import { json, bump } from '../_lib/util.js';
 const MAX = { name: 120, company: 160, email: 200, phone: 60, service: 60, message: 4000 };
 const LIMIT_PER_HOUR = 5;
 const MAX_STORED = 500;
+const MIN_FILL_MS = 1500;
+const MAX_LINKS = 3;
 
 export async function onRequestPost({ request, env }) {
   if (!env.KNOSH) return json({ error: 'Messages are not set up yet.' }, 503);
@@ -11,6 +13,13 @@ export async function onRequestPost({ request, env }) {
   try { b = await request.json(); } catch (e) { return json({ error: 'Invalid request.' }, 400); }
   if (!b || typeof b !== 'object') return json({ error: 'Invalid request.' }, 400);
   if (b._gotcha) return json({ ok: true }); // honeypot: pretend it worked
+  if (typeof b.t === 'number' && b.t < MIN_FILL_MS) return json({ ok: true }); // filled in faster than a person can type
+
+  // Cloudflare Turnstile (when TURNSTILE_SECRET is set): proves a real browser/person sent this
+  if (env.TURNSTILE_SECRET) {
+    const ok = await verifyTurnstile(env.TURNSTILE_SECRET, typeof b.turnstile === 'string' ? b.turnstile : '', request.headers.get('CF-Connecting-IP'));
+    if (!ok) return json({ error: 'The security check didn’t pass. Please reload the page and try again.' }, 400);
+  }
 
   const m = {};
   for (const k of Object.keys(MAX)) {
@@ -20,6 +29,8 @@ export async function onRequestPost({ request, env }) {
   }
   if (!m.name || !m.email || !m.phone || !m.message) return json({ error: 'Please fill in name, email, phone and message.' }, 400);
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(m.email)) return json({ error: 'That email address doesn’t look right.' }, 400);
+
+  if ((m.message.match(/https?:\/\//gi) || []).length > MAX_LINKS) return json({ error: 'Please remove some of the links from your message and try again.' }, 400);
 
   const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
   const rl = 'rl:' + ip;
@@ -71,4 +82,15 @@ async function notify(env, m) {
     });
     if (!r.ok) console.error('Resend error', r.status, await r.text());
   } catch (e) { console.error('Resend failed', e); }
+}
+
+async function verifyTurnstile(secret, token, ip) {
+  if (!token) return false;
+  try {
+    const body = new URLSearchParams({ secret, response: token });
+    if (ip) body.set('remoteip', ip);
+    const r = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', { method: 'POST', body });
+    const j = await r.json();
+    return j.success === true;
+  } catch (e) { return false; }
 }

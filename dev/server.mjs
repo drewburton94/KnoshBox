@@ -36,7 +36,8 @@ function serveStatic(pathname) {
   return new Response(fs.readFileSync(f), { headers: { 'Content-Type': MIME[path.extname(f)] || 'application/octet-stream' } });
 }
 const env = {
-  KNOSH, EDIT_TOKEN: process.env.EDIT_TOKEN || 'dev-token', EDIT_PASSWORD: process.env.EDIT_PASSWORD || 'dev-password',
+  KNOSH, RESEND_API_KEY: process.env.RESEND_API_KEY, NOTIFY_EMAIL: process.env.NOTIFY_EMAIL, TURNSTILE_SITE_KEY: process.env.TURNSTILE_SITE_KEY, TURNSTILE_SECRET: process.env.TURNSTILE_SECRET,
+  EDIT_TOKEN: process.env.EDIT_TOKEN || 'dev-token', EDIT_PASSWORD: process.env.EDIT_PASSWORD || 'dev-password',
   ASSETS: { fetch: req => serveStatic(new URL(req.url || req.href || String(req)).pathname) || new Response('Not found', { status: 404 }) }
 };
 const routes = [

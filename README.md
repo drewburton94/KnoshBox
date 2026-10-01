@@ -53,6 +53,14 @@ Without a verified domain, Resend only delivers to the address the account was c
 To send from your own domain or to other addresses, verify knoshbox.com in Resend and set
 `MAIL_FROM` (e.g. `Knosh Box <website@knoshbox.com>`).
 
+## Stop form spam (Cloudflare Turnstile, free)
+Built-in protection is always on: a hidden trap field, a minimum fill time, a link limit, and 5 messages/hour per visitor.
+For real bot blocking, add Turnstile:
+1. Cloudflare dashboard > Turnstile > Add widget. Name it, add hostnames `knoshbox.com`, `www.knoshbox.com` (and the `*.workers.dev` address if you want to test there), mode **Managed**.
+2. Copy the **Site key** and **Secret key**.
+3. Worker > Settings > Variables and Secrets: add `TURNSTILE_SITE_KEY` (text) and `TURNSTILE_SECRET` (secret). Redeploy.
+The check stays invisible unless a visitor looks suspicious. Editor > Settings > Status shows whether it's on.
+
 ## Run locally
 `npm run dev` then open http://localhost:8788 (editor: `/edit/dev-token`, password `dev-password`).
 Local edits are stored in `.dev-kv.json` (git-ignored).

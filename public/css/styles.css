@@ -296,3 +296,5 @@ p,.s-blurb,.sent-body,.lead{text-wrap:balance}
 
 /* line breaks typed in the editor show up on the page (zero specificity, so explicit white-space rules still win) */
 :where([data-edit]){white-space:pre-line}
+
+.ts-box{min-height:0}

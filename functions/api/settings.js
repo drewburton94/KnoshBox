@@ -6,7 +6,15 @@ export async function onRequestPost({ request, env }) {
   if (denied) return denied;
   let b; try { b = await request.json(); } catch (e) { return json({ error: 'Invalid request.' }, 400); }
 
-  if (b.action === 'info') return json({ customPassword: await hasCustomPassword(env) });
+  if (b.action === 'info') {
+    const to = (env.NOTIFY_EMAIL || '').split(',').map(x => x.trim()).filter(Boolean)
+      .map(a => a.replace(/^(.).*(@.*)$/, '$1•••$2'));
+    return json({
+      customPassword: await hasCustomPassword(env),
+      emailOn: !!(env.RESEND_API_KEY && to.length), emailTo: to,
+      botProtection: !!(env.TURNSTILE_SITE_KEY && env.TURNSTILE_SECRET)
+    });
+  }
   if (b.action === 'password') {
     const pw = typeof b.newPassword === 'string' ? b.newPassword : '';
     if (pw.length < 10) return json({ error: 'Use at least 10 characters.' }, 400);

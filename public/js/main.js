@@ -257,7 +257,7 @@
   fetch('/api/content', { headers: { Accept: 'application/json' } })
     .then(function (r) { return r.ok ? r.json() : {}; })
     .catch(function () { return {}; })
-    .then(function (j) { applyContent(j && j.values); fitAll(); });
+    .then(function (j) { applyContent(j && j.values); fitAll(); if (j && j.config && j.config.turnstileSiteKey) window.__kbTurnstile(j.config.turnstileSiteKey); });
 
   /* clamshells: hover opens on mouse devices, tap/Enter toggles, one open at a time */
   (function () {
@@ -290,6 +290,18 @@
   /* contact form */
   (function () {
     var form = $('#form'), sent = $('#sent'), err = $('#formError'), btn = $('#sendBtn');
+    var loadedAt = Date.now(), tsId = null, tsKey = '';
+
+    // Cloudflare Turnstile: only shown when the site has keys configured; stays invisible unless a visitor needs to be checked
+    window.__kbTurnstile = function (key) {
+      if (tsKey || !key) return; tsKey = key;
+      var box = document.createElement('div'); box.id = 'tsBox'; box.className = 'ts-box';
+      form.insertBefore(box, $('.form-foot', form));
+      function render() { try { tsId = window.turnstile.render(box, { sitekey: key, appearance: 'interaction-only', theme: 'light' }); } catch (e) {} }
+      if (window.turnstile) { render(); return; }
+      var s = document.createElement('script'); s.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit'; s.async = true; s.defer = true;
+      s.onload = render; document.head.appendChild(s);
+    };
     function showErr(msg) { err.textContent = msg; err.hidden = !msg; }
     form.addEventListener('submit', function (e) {
       e.preventDefault(); showErr('');
@@ -301,11 +313,18 @@
       var phoneMsg = ' Please call us at (989) 751 5986 instead.';
       if (!cfg.formEndpoint) { showErr('The message form isn’t connected yet.' + phoneMsg); return; }
       var body = {}; d.forEach(function (v, k) { body[k] = v; });
+      body.t = Date.now() - loadedAt;
+      if (tsKey) {
+        var token = '';
+        try { token = window.turnstile.getResponse(tsId) || ''; } catch (e) {}
+        if (!token) { showErr('Please wait a moment while we run a quick security check, then press Send again.'); return; }
+        body.turnstile = token;
+      }
       btn.disabled = true; btn.textContent = 'Sending…';
       fetch(cfg.formEndpoint, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' }, body: JSON.stringify(body) })
         .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) throw new Error(j.error || ''); done(d); }); })
         .catch(function (e) { showErr((e.message ? e.message + ' ' : 'Sorry, that didn’t go through.') + phoneMsg); })
-        .then(function () { btn.disabled = false; btn.textContent = 'Send message →'; });
+        .then(function () { btn.disabled = false; btn.textContent = 'Send message →'; try { if (tsKey) window.turnstile.reset(tsId); } catch (e) {} });
     });
     function done(d) {
       var first = String(d.get('name') || '').trim().split(/\s+/)[0] || 'there';
