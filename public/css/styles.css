@@ -122,7 +122,6 @@ button{font:inherit;color:inherit}
 .photo{margin:0;border-radius:28px;padding:10px;background:var(--plastic);border:3px solid var(--ink);box-shadow:8px 8px 0 var(--red);transform:rotate(-1.5deg);transition:transform .3s}
 .photo:hover{transform:rotate(0)}
 .photo-in{position:relative;border-radius:18px;overflow:hidden;background:#d9d2c4}
-.about-copy .more{white-space:pre-line}
 .about-copy .more:empty{display:none}
 .collage{display:flex;flex-direction:column;padding-bottom:56px}
 .people{display:flex;align-items:flex-start;margin-top:-64px;padding:0 3%;position:relative;z-index:2}
@@ -294,3 +293,6 @@ address{font-style:normal;font-weight:800;font-size:24px;letter-spacing:-0.02em;
 h1,h2,h3,.banner>span:first-child,.cta>span:first-child,.form-title,.sent-title,.s-name,.s-parts,.mat-use,.banner .mono,.info-title{text-wrap:balance}
 p,.s-blurb,.sent-body,.lead{text-wrap:balance}
 [data-fit]{transition:none}
+
+/* line breaks typed in the editor show up on the page (zero specificity, so explicit white-space rules still win) */
+:where([data-edit]){white-space:pre-line}

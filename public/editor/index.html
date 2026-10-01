@@ -27,6 +27,8 @@ label.f{display:flex;flex-direction:column;gap:6px}
 input[type=text],input[type=password],textarea{width:100%;font:inherit;font-size:15px;padding:11px 13px;border:2.5px solid var(--ink);border-radius:12px;background:#fff;color:var(--ink);outline:none}
 input:focus,textarea:focus{border-color:var(--red);box-shadow:0 0 0 4px rgba(200,38,31,.22)}
 textarea{resize:vertical;min-height:84px;line-height:1.45}
+textarea.auto{min-height:46px;resize:vertical;overflow:hidden;font-family:inherit}
+.fieldtip{margin:0 0 4px;color:var(--muted);font-size:13px;line-height:1.4}
 .btn{border:3px solid var(--ink);border-radius:99px;background:var(--red);color:#fff;font-weight:800;font-size:16px;padding:12px 22px;box-shadow:0 5px 0 var(--ink);transition:transform .08s,box-shadow .08s}
 .btn:active{transform:translateY(5px);box-shadow:0 0 0 var(--ink)}
 .btn:disabled{opacity:.6;cursor:default}
@@ -200,7 +202,7 @@ table.data th:first-child,table.data td:first-child{text-align:left}
     </div>
   </div>
   <div class="layout" id="layout">
-    <div class="fields" id="fields"></div>
+    <div class="fields" id="fields"><p class="fieldtip">Tip: press Enter for a new line. Leave a blank line between paragraphs.</p></div>
     <div class="preview">
       <div class="pv-top"><span class="mono">Live preview. Changes go live when you save.</span>
         <button class="btn ghost" type="button" data-w="desktop">Desktop</button>
@@ -276,6 +278,7 @@ table.data th:first-child,table.data td:first-child{text-align:left}
       groups[g].forEach(function (f) { body.appendChild(buildField(f)); });
       det.appendChild(body); box.appendChild(det);
       det.dataset.gi = gi; det._fields = groups[g];
+      det.addEventListener('toggle', function () { if (det.open) groups[g].forEach(function (f) { if (inputs[f.key].grow) inputs[f.key].grow(); }); });
     });
     refresh();
   }
@@ -304,15 +307,15 @@ table.data th:first-child,table.data td:first-child{text-align:left}
           .catch(function (e) { hint.textContent = e.message; hint.className = 'hint bad'; });
       });
     } else {
-      var long = f.long || f.type === 'lines' || (defaults[f.key] || '').length > 55;
-      var inp = document.createElement(long ? 'textarea' : 'input');
-      if (!long) inp.type = 'text';
-      if (long) inp.rows = f.type === 'lines' ? 2 : Math.min(6, Math.ceil((defaults[f.key] || '').length / 48));
+      var isVideo = f.type === 'video';
+      var inp = document.createElement(isVideo ? 'input' : 'textarea');
+      if (isVideo) inp.type = 'text'; else { inp.rows = 1; inp.className = 'auto'; }
       inp.id = 'in-' + f.key; inp.setAttribute('aria-label', f.label);
       wrap.appendChild(inp);
-      if (f.type === 'video') { inp.placeholder = 'https://www.youtube.com/watch?v=…'; wrap.appendChild(hint); }
-      inputs[f.key] = { set: function () { if (document.activeElement !== inp) inp.value = cur(f.key); videoHint(f, inp, hint); } };
-      inp.addEventListener('input', function () { values[f.key] = inp.value; videoHint(f, inp, hint); refresh(); });
+      if (isVideo) { inp.placeholder = 'https://www.youtube.com/watch?v=…'; wrap.appendChild(hint); }
+      function grow() { if (isVideo) return; inp.style.height = 'auto'; inp.style.height = (inp.scrollHeight + 4) + 'px'; }
+      inputs[f.key] = { set: function () { if (document.activeElement !== inp) inp.value = cur(f.key); videoHint(f, inp, hint); grow(); }, grow: grow };
+      inp.addEventListener('input', function () { values[f.key] = inp.value; videoHint(f, inp, hint); grow(); refresh(); });
     }
     reset.addEventListener('click', function () { delete values[f.key]; refresh(true); });
     return wrap;
