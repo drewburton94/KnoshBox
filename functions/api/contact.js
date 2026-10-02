@@ -15,10 +15,15 @@ export async function onRequestPost({ request, env }) {
   if (b._gotcha) return json({ ok: true }); // honeypot: pretend it worked
   if (typeof b.t === 'number' && b.t < MIN_FILL_MS) return json({ ok: true }); // filled in faster than a person can type
 
-  // Cloudflare Turnstile (when TURNSTILE_SECRET is set): proves a real browser/person sent this
-  if (env.TURNSTILE_SECRET) {
-    const ok = await verifyTurnstile(env.TURNSTILE_SECRET, typeof b.turnstile === 'string' ? b.turnstile : '', request.headers.get('CF-Connecting-IP'));
-    if (!ok) return json({ error: 'The security check didn’t pass. Please reload the page and try again.' }, 400);
+  // Cloudflare Turnstile: only enforced when BOTH keys are set, the same condition under which the page shows the widget
+  const tsSecret = (env.TURNSTILE_SECRET || '').trim(), tsSite = (env.TURNSTILE_SITE_KEY || '').trim();
+  if (tsSecret && tsSite) {
+    const r = await verifyTurnstile(tsSecret, typeof b.turnstile === 'string' ? b.turnstile : '', request.headers.get('CF-Connecting-IP'));
+    if (!r.ok) {
+      console.error('Turnstile check failed:', r.codes.join(','));
+      const code = r.codes[0] ? ' (' + r.codes[0] + ')' : '';
+      return json({ error: 'The security check didn’t pass' + code + '. Please reload the page and try again.', code: r.codes[0] || '' }, 400);
+    }
   }
 
   const m = {};
@@ -84,13 +89,14 @@ async function notify(env, m) {
   } catch (e) { console.error('Resend failed', e); }
 }
 
-async function verifyTurnstile(secret, token, ip) {
-  if (!token) return false;
+// Returns { ok, codes } where codes are Cloudflare's error-codes (for troubleshooting).
+export async function verifyTurnstile(secret, token, ip) {
+  if (!token) return { ok: false, codes: ['missing-input-response'] };
   try {
     const body = new URLSearchParams({ secret, response: token });
     if (ip) body.set('remoteip', ip);
     const r = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', { method: 'POST', body });
     const j = await r.json();
-    return j.success === true;
-  } catch (e) { return false; }
+    return { ok: j.success === true, codes: Array.isArray(j['error-codes']) ? j['error-codes'] : [] };
+  } catch (e) { return { ok: false, codes: ['verify-request-failed'] }; }
 }

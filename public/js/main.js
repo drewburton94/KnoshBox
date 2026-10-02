@@ -290,17 +290,18 @@
   /* contact form */
   (function () {
     var form = $('#form'), sent = $('#sent'), err = $('#formError'), btn = $('#sendBtn');
-    var loadedAt = Date.now(), tsId = null, tsKey = '';
+    var loadedAt = Date.now(), tsId = null, tsKey = '', tsErr = '';
 
     // Cloudflare Turnstile: only shown when the site has keys configured; stays invisible unless a visitor needs to be checked
     window.__kbTurnstile = function (key) {
       if (tsKey || !key) return; tsKey = key;
       var box = document.createElement('div'); box.id = 'tsBox'; box.className = 'ts-box';
       form.insertBefore(box, $('.form-foot', form));
-      function render() { try { tsId = window.turnstile.render(box, { sitekey: key, appearance: 'interaction-only', theme: 'light' }); } catch (e) {} }
+      function render() { try { tsId = window.turnstile.render(box, { sitekey: key, appearance: 'interaction-only', theme: 'light',
+          'error-callback': function (c) { tsErr = String(c || 'error'); return true; }, 'timeout-callback': function () { tsErr = 'timeout'; }, callback: function () { tsErr = ''; } }); } catch (e) {} }
       if (window.turnstile) { render(); return; }
       var s = document.createElement('script'); s.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit'; s.async = true; s.defer = true;
-      s.onload = render; document.head.appendChild(s);
+      s.onload = render; s.onerror = function () { tsErr = 'script-blocked'; }; document.head.appendChild(s);
     };
     function showErr(msg) { err.textContent = msg; err.hidden = !msg; }
     form.addEventListener('submit', function (e) {
@@ -317,7 +318,10 @@
       if (tsKey) {
         var token = '';
         try { token = window.turnstile.getResponse(tsId) || ''; } catch (e) {}
-        if (!token) { showErr('Please wait a moment while we run a quick security check, then press Send again.'); return; }
+        if (!token) {
+          showErr(tsErr ? 'The security check couldn’t start (' + tsErr + '). Please reload the page, or call us at (989) 751 5986.' : 'Please wait a moment while we run a quick security check, then press Send again.');
+          return;
+        }
         body.turnstile = token;
       }
       btn.disabled = true; btn.textContent = 'Sending…';

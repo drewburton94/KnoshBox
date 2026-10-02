@@ -59,7 +59,9 @@ For real bot blocking, add Turnstile:
 1. Cloudflare dashboard > Turnstile > Add widget. Name it, add hostnames `knoshbox.com`, `www.knoshbox.com` (and the `*.workers.dev` address if you want to test there), mode **Managed**.
 2. Copy the **Site key** and **Secret key**.
 3. Worker > Settings > Variables and Secrets: add `TURNSTILE_SITE_KEY` (text) and `TURNSTILE_SECRET` (secret). Redeploy.
-The check stays invisible unless a visitor looks suspicious. Editor > Settings > Status shows whether it's on.
+The check stays invisible unless a visitor looks suspicious. Editor > Settings > Status shows whether it's on and whether Cloudflare accepts the secret.
+Troubleshooting "The security check didn't pass (code)": `invalid-input-secret` = re-copy the secret into `TURNSTILE_SECRET` (don't rotate it afterwards without updating); `missing-input-response` = reload the page (cached old script); a widget error code on the page = check the widget's hostnames.
+Protection is only enforced when both `TURNSTILE_SITE_KEY` and `TURNSTILE_SECRET` are set.
 
 ## Run locally
 `npm run dev` then open http://localhost:8788 (editor: `/edit/dev-token`, password `dev-password`).
