@@ -184,7 +184,7 @@
       <div class="contact-row">
         <div class="form-card">
           <form id="form" novalidate>
-            <div class="form-head"><span class="form-title" data-edit="form.title" data-label="Form heading" data-group="Contact">Send us a message</span><span class="mono" data-edit="form.note" data-label="Form note" data-group="Contact">We reply within one business day</span></div>
+            <div class="form-head"><span class="form-title" data-edit="form.title" data-label="Form heading" data-group="Contact">Send us a message</span><span class="mono" data-edit="form.note" data-label="Form note" data-group="Contact">We reply within 2 business days</span></div>
             <div class="fields">
               <label><span class="mono lab">Name <i>*</i></span><input name="name" type="text" required autocomplete="name" placeholder="Jane Smith"></label>
               <label><span class="mono lab">Company</span><input name="company" type="text" autocomplete="organization" placeholder="Acme Plastics"></label>
@@ -203,7 +203,7 @@
           <div class="sent" id="sent" hidden>
             <span class="check" aria-hidden="true"><svg viewBox="0 0 24 24" width="26" height="26"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
             <span class="sent-title" id="sentTitle"></span>
-            <span class="sent-body">We’ll get back to you within one business day. If it’s urgent, give us a call.</span>
+            <span class="sent-body" data-edit="form.sent" data-label="Message shown after sending" data-group="Contact">We will get back to you within 2 business days.</span>
             <button type="button" class="mono linkbtn" id="again">Send another</button>
           </div>
         </div>

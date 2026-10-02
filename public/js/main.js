@@ -334,9 +334,15 @@
       var first = String(d.get('name') || '').trim().split(/\s+/)[0] || 'there';
       $('#sentTitle').textContent = 'Thanks, ' + first + '. Message received.';
       form.hidden = true; sent.hidden = false;
+      // the confirmation takes the form's place; make sure it is on screen (the page just got shorter)
+      var card = sent.parentElement, r = card.getBoundingClientRect();
+      if (card.scrollIntoView && (r.top < 60 || r.bottom > innerHeight)) {
+        card.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion:reduce)').matches ? 'auto' : 'smooth', block: 'center' });
+      }
     }
     $('#again').addEventListener('click', function () {
       form.reset(); form.classList.remove('tried'); sent.hidden = true; form.hidden = false; showErr('');
+      form.parentElement.scrollIntoView({ block: 'center' });
     });
   })();
 })();
