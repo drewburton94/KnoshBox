@@ -6,6 +6,15 @@ const LIMIT_PER_HOUR = 5;
 const MAX_STORED = 500;
 const MIN_FILL_MS = 1500;
 const MAX_LINKS = 3;
+const CONFIG_ERRORS = ['invalid-input-secret', 'missing-input-secret', 'internal-error', 'bad-request', 'verify-request-failed'];
+
+// Remember the last meaningful outcome (only when it changes) so the editor's Status can show the real state.
+async function recordTurnstile(env, state) {
+  try {
+    const prev = JSON.parse((await env.KNOSH.get('cfg:tslast')) || '{}');
+    if (prev.state !== state) await env.KNOSH.put('cfg:tslast', JSON.stringify({ state, at: new Date().toISOString() }));
+  } catch (e) {}
+}
 
 export async function onRequestPost({ request, env }) {
   if (!env.KNOSH) return json({ error: 'Messages are not set up yet.' }, 503);
@@ -19,10 +28,16 @@ export async function onRequestPost({ request, env }) {
   const tsSecret = (env.TURNSTILE_SECRET || '').trim(), tsSite = (env.TURNSTILE_SITE_KEY || '').trim();
   if (tsSecret && tsSite) {
     const r = await verifyTurnstile(tsSecret, typeof b.turnstile === 'string' ? b.turnstile : '', request.headers.get('CF-Connecting-IP'));
+    const ourProblem = !r.ok && r.codes.some(x => CONFIG_ERRORS.includes(x));
+    if (r.ok || ourProblem) await recordTurnstile(env, r.ok ? 'ok' : r.codes.find(x => CONFIG_ERRORS.includes(x)));
     if (!r.ok) {
       console.error('Turnstile check failed:', r.codes.join(','));
-      const code = r.codes[0] ? ' (' + r.codes[0] + ')' : '';
-      return json({ error: 'The security check didn’t pass' + code + '. Please reload the page and try again.', code: r.codes[0] || '' }, 400);
+      // A wrong secret key or a Cloudflare outage is our problem, not the visitor's: let the message through
+      // (the other spam filters still apply) instead of turning real customers away.
+      if (!ourProblem) {
+        const code = r.codes[0] ? ' (' + r.codes[0] + ')' : '';
+        return json({ error: 'The security check didn’t pass' + code + '. Please reload the page and try again.', code: r.codes[0] || '' }, 400);
+      }
     }
   }
 

@@ -529,7 +529,15 @@ table.data th:first-child,table.data td:first-child{text-align:left}
     api('/api/settings', JSON.stringify({ action: 'info' })).then(function (r) {
       var ul = $('#statusList'); ul.textContent = '';
       [['Contact form emails', r.emailOn ? 'On, sending to ' + r.emailTo.join(', ') : 'Off (messages are still saved in the Messages tab)'],
-       ['Bot protection (Turnstile)', ({ ok: 'On, keys accepted by Cloudflare', off: 'Off (only the basic spam filters are active)', 'missing-site-key': 'Off: TURNSTILE_SITE_KEY is missing in Cloudflare', 'missing-secret': 'Off: TURNSTILE_SECRET is missing in Cloudflare', 'secret-rejected': 'Problem: Cloudflare rejected the secret key. Copy it again from the Turnstile page into TURNSTILE_SECRET and redeploy.', unknown: 'On, but the secret key could not be checked right now' })[r.turnstile] || 'Unknown'],
+       ['Bot protection (Turnstile)', ({
+         ok: 'Working. The last check passed' + (r.turnstileAt ? ' ' + new Date(r.turnstileAt).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }) : '') + '.',
+         off: 'Off (only the basic spam filters are active)',
+         'missing-site-key': 'Off: TURNSTILE_SITE_KEY is missing in Cloudflare',
+         'missing-secret': 'Off: TURNSTILE_SECRET is missing in Cloudflare',
+         untested: 'Keys are set. Send a test message on the website to confirm it works.',
+         'secret-rejected': 'Problem' + (r.turnstileAt ? ' ' + new Date(r.turnstileAt).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }) : '') + ': Cloudflare says the secret key is invalid. Messages still go through, but bots are not being blocked. Copy the secret again from the Turnstile page into TURNSTILE_SECRET and redeploy.',
+         'cloudflare-error': 'Cloudflare could not check the last message' + (r.turnstileAt ? ' ' + new Date(r.turnstileAt).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }) : '') + '. Messages still go through.'
+       })[r.turnstile] || 'Unknown'],
        ['Editing password', r.customPassword ? 'Changed in this editor' : 'Original password from Cloudflare']].forEach(function (x) {
         var li = el('li'); li.appendChild(el('span', '', x[0])); li.appendChild(el('span', 'v', x[1])); ul.appendChild(li);
       });

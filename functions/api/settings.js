@@ -1,5 +1,4 @@
 import { json, requireEditor, setPassword, hasCustomPassword } from '../_lib/util.js';
-import { verifyTurnstile } from './contact.js';
 
 // Editor only. POST { action: 'info' } or { action: 'password', newPassword }
 export async function onRequestPost({ request, env }) {
@@ -11,18 +10,20 @@ export async function onRequestPost({ request, env }) {
     const to = (env.NOTIFY_EMAIL || '').split(',').map(x => x.trim()).filter(Boolean)
       .map(a => a.replace(/^(.).*(@.*)$/, '$1•••$2'));
     const secret = (env.TURNSTILE_SECRET || '').trim(), site = (env.TURNSTILE_SITE_KEY || '').trim();
-    let turnstile = 'off';
+    let turnstile = 'off', at = '';
     if (secret && !site) turnstile = 'missing-site-key';
     else if (site && !secret) turnstile = 'missing-secret';
     else if (secret && site) {
-      // a dummy token: Cloudflare answers invalid-input-secret if the secret is wrong, otherwise invalid-input-response
-      const r = await verifyTurnstile(secret, 'secret-check', null);
-      turnstile = r.codes.includes('invalid-input-secret') ? 'secret-rejected' : r.codes.includes('verify-request-failed') ? 'unknown' : 'ok';
+      // what the last real form submission showed (recorded by /api/contact)
+      let last = {}; try { last = JSON.parse((await env.KNOSH.get('cfg:tslast')) || '{}'); } catch (e) {}
+      at = last.at || '';
+      turnstile = !last.state ? 'untested' : last.state === 'ok' ? 'ok'
+        : /secret/.test(last.state) ? 'secret-rejected' : 'cloudflare-error';
     }
     return json({
       customPassword: await hasCustomPassword(env),
       emailOn: !!(env.RESEND_API_KEY && to.length), emailTo: to,
-      botProtection: turnstile === 'ok', turnstile
+      botProtection: turnstile === 'ok', turnstile, turnstileAt: at
     });
   }
   if (b.action === 'password') {
