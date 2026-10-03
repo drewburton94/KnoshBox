@@ -22,7 +22,8 @@ export async function onRequestPost({ request, env }) {
     }
     return json({
       customPassword: await hasCustomPassword(env),
-      emailOn: !!(env.RESEND_API_KEY && to.length), emailTo: to,
+      emailOn: !!((env.SMTP2GO_API_KEY || env.RESEND_API_KEY) && to.length), emailTo: to,
+      emailProvider: env.SMTP2GO_API_KEY ? 'SMTP2GO' : env.RESEND_API_KEY ? 'Resend' : '',
       botProtection: turnstile === 'ok', turnstile, turnstileAt: at
     });
   }

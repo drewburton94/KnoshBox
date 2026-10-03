@@ -72,11 +72,13 @@ export async function onRequestPost({ request, env }) {
   return json({ ok: true });
 }
 
-// Emails the message to NOTIFY_EMAIL through Resend (https://resend.com). Best effort:
+// Emails the message to NOTIFY_EMAIL through SMTP2GO (SMTP2GO_API_KEY) or Resend (RESEND_API_KEY). Best effort:
 // the message is already saved, so a failed email never fails the visitor's submission.
 async function notify(env, m) {
-  if (!env.RESEND_API_KEY || !env.NOTIFY_EMAIL) return;
+  const to = (env.NOTIFY_EMAIL || '').split(',').map(x => x.trim()).filter(Boolean);
+  if (!to.length || !(env.SMTP2GO_API_KEY || env.RESEND_API_KEY)) return;
   const clean = v => String(v).replace(/[\r\n]+/g, ' ').slice(0, 120);
+  const subject = 'Website message from ' + clean(m.name) + (m.company ? ' (' + clean(m.company) + ')' : '');
   const text = [
     'New message from the Knosh Box website',
     '',
@@ -89,19 +91,29 @@ async function notify(env, m) {
     m.message
   ].join('\n');
   try {
+    if (env.SMTP2GO_API_KEY) {
+      // SMTP2GO (https://www.smtp2go.com): the sender domain must be verified there
+      const r = await fetch('https://api.smtp2go.com/v3/email/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({
+          api_key: env.SMTP2GO_API_KEY.trim(),
+          sender: (env.MAIL_FROM || 'Knosh Box Website <website@knoshbox.com>').trim(),
+          to, subject, text_body: text,
+          custom_headers: [{ header: 'Reply-To', value: m.email }]
+        })
+      });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok || !(j.data && j.data.succeeded > 0)) console.error('SMTP2GO error', r.status, JSON.stringify(j).slice(0, 300));
+      return;
+    }
     const r = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: { Authorization: 'Bearer ' + env.RESEND_API_KEY, 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        from: env.MAIL_FROM || 'Knosh Box Website <onboarding@resend.dev>',
-        to: env.NOTIFY_EMAIL.split(',').map(x => x.trim()).filter(Boolean),
-        reply_to: m.email,
-        subject: 'Website message from ' + clean(m.name) + (m.company ? ' (' + clean(m.company) + ')' : ''),
-        text
-      })
+      body: JSON.stringify({ from: env.MAIL_FROM || 'Knosh Box Website <onboarding@resend.dev>', to, reply_to: m.email, subject, text })
     });
     if (!r.ok) console.error('Resend error', r.status, await r.text());
-  } catch (e) { console.error('Resend failed', e); }
+  } catch (e) { console.error('Email failed', e); }
 }
 
 // Returns { ok, codes } where codes are Cloudflare's error-codes (for troubleshooting).

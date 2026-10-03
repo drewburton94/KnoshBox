@@ -528,7 +528,7 @@ table.data th:first-child,table.data td:first-child{text-align:left}
   function loadStatus() {
     api('/api/settings', JSON.stringify({ action: 'info' })).then(function (r) {
       var ul = $('#statusList'); ul.textContent = '';
-      [['Contact form emails', r.emailOn ? 'On, sending to ' + r.emailTo.join(', ') : 'Off (messages are still saved in the Messages tab)'],
+      [['Contact form emails', r.emailOn ? 'On (' + r.emailProvider + '), sending to ' + r.emailTo.join(', ') : 'Off (messages are still saved in the Messages tab)'],
        ['Bot protection (Turnstile)', ({
          ok: 'Working. The last check passed' + (r.turnstileAt ? ' ' + new Date(r.turnstileAt).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }) : '') + '.',
          off: 'Off (only the basic spam filters are active)',
