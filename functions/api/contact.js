@@ -72,11 +72,12 @@ export async function onRequestPost({ request, env }) {
   return json({ ok: true });
 }
 
-// Emails the message to NOTIFY_EMAIL through SMTP2GO (SMTP2GO_API_KEY) or Resend (RESEND_API_KEY). Best effort:
+// Emails the message to NOTIFY_EMAIL through SMTP2GO (SMTP2GO_API_KEY), Resend (RESEND_API_KEY) or, with neither,
+// Cloudflare's own EMAIL binding (see wrangler.toml). Best effort:
 // the message is already saved, so a failed email never fails the visitor's submission.
 async function notify(env, m) {
   const to = (env.NOTIFY_EMAIL || '').split(',').map(x => x.trim()).filter(Boolean);
-  if (!to.length || !(env.SMTP2GO_API_KEY || env.RESEND_API_KEY)) return;
+  if (!to.length || !(env.SMTP2GO_API_KEY || env.RESEND_API_KEY || env.EMAIL)) return;
   const clean = v => String(v).replace(/[\r\n]+/g, ' ').slice(0, 120);
   const subject = 'Website message from ' + clean(m.name) + (m.company ? ' (' + clean(m.company) + ')' : '');
   const text = [
@@ -107,6 +108,16 @@ async function notify(env, m) {
       if (!r.ok || !(j.data && j.data.succeeded > 0)) console.error('SMTP2GO error', r.status, JSON.stringify(j).slice(0, 300));
       return;
     }
+    if (!env.RESEND_API_KEY) {
+      // Cloudflare Email Routing: send through the worker's EMAIL binding. The recipient must be a verified
+      // destination address in Email Routing, and the sender an address on a domain with Email Routing on.
+      const from = parseAddress(env.MAIL_FROM || 'Knosh Box Website <website@knoshbox.com>');
+      const EM = globalThis.__EmailMessageForTest || (await import('cloudflare:email')).EmailMessage;
+      for (const addr of to) {
+        await env.EMAIL.send(new EM(from.email, addr, buildMime({ from, to: addr, replyTo: m.email, subject, text })));
+      }
+      return;
+    }
     const r = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: { Authorization: 'Bearer ' + env.RESEND_API_KEY, 'Content-Type': 'application/json' },
@@ -114,6 +125,34 @@ async function notify(env, m) {
     });
     if (!r.ok) console.error('Resend error', r.status, await r.text());
   } catch (e) { console.error('Email failed', e); }
+}
+
+function parseAddress(s) {
+  const mt = String(s).match(/^\s*"?([^"<]*?)"?\s*<([^>\s]+)>\s*$/);
+  return mt ? { name: mt[1].trim(), email: mt[2] } : { name: '', email: String(s).trim() };
+}
+const b64 = str => { const b = new TextEncoder().encode(str); let s = ''; for (const x of b) s += String.fromCharCode(x); return btoa(s); };
+const wrap76 = s => (s.match(/.{1,76}/g) || []).join('\r\n');
+
+// Minimal RFC 5322 message: UTF-8 subject/name encoded, body as base64 text/plain.
+export function buildMime({ from, to, replyTo, subject, text }) {
+  const enc = v => /^[\x20-\x7e]*$/.test(v) ? v : '=?UTF-8?B?' + b64(v) + '?=';
+  const line = v => String(v).replace(/[\r\n]+/g, ' ');
+  const domain = (from.email.split('@')[1] || 'localhost');
+  return [
+    'From: ' + (from.name ? enc(line(from.name)) + ' ' : '') + '<' + from.email + '>',
+    'To: ' + line(to),
+    'Reply-To: ' + line(replyTo),
+    'Subject: ' + enc(line(subject)),
+    'Date: ' + new Date().toUTCString().replace('GMT', '+0000'),
+    'Message-ID: <' + crypto.randomUUID() + '@' + domain + '>',
+    'MIME-Version: 1.0',
+    'Content-Type: text/plain; charset=UTF-8',
+    'Content-Transfer-Encoding: base64',
+    '',
+    wrap76(b64(text)),
+    ''
+  ].join('\r\n');
 }
 
 // Returns { ok, codes } where codes are Cloudflare's error-codes (for troubleshooting).

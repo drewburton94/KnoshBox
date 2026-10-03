@@ -22,8 +22,8 @@ export async function onRequestPost({ request, env }) {
     }
     return json({
       customPassword: await hasCustomPassword(env),
-      emailOn: !!((env.SMTP2GO_API_KEY || env.RESEND_API_KEY) && to.length), emailTo: to,
-      emailProvider: env.SMTP2GO_API_KEY ? 'SMTP2GO' : env.RESEND_API_KEY ? 'Resend' : '',
+      emailOn: !!((env.SMTP2GO_API_KEY || env.RESEND_API_KEY || env.EMAIL) && to.length), emailTo: to,
+      emailProvider: env.SMTP2GO_API_KEY ? 'SMTP2GO' : env.RESEND_API_KEY ? 'Resend' : env.EMAIL ? 'Cloudflare' : '',
       botProtection: turnstile === 'ok', turnstile, turnstileAt: at
     });
   }

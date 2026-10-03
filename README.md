@@ -41,7 +41,10 @@ New editable text = add `data-edit="some.key" data-label="Label" data-group="Sec
 Visitors see a poster with our own play button and controls. The YouTube player itself is fully covered, so the title,
 channel name and YouTube links can't be clicked. Clicking the video toggles play/pause. The player is built in the background shortly after the page loads so playback starts instantly, and the controls only appear while the mouse is over the video.
 
-## Email each message (SMTP2GO or Resend)
+## Email each message
+Simplest (no outside account): set `NOTIFY_EMAIL` to a Gmail address that is **Verified** in Cloudflare Email Routing > Destination addresses. The site sends through Cloudflare's `EMAIL` binding (`wrangler.toml`), from `website@knoshbox.com` (override with `MAIL_FROM`). Cloudflare can only send to verified destination addresses.
+
+### Or use SMTP2GO / Resend
 Set `NOTIFY_EMAIL` (e.g. `josiah.kahl@knoshbox.com`, which Cloudflare Email Routing forwards to Gmail) and ONE of:
 - `SMTP2GO_API_KEY` (secret): SMTP2GO > Settings > API Keys. The sender domain `knoshbox.com` must be verified in SMTP2GO. Optional `MAIL_FROM`, default `Knosh Box Website <website@knoshbox.com>`.
 - `RESEND_API_KEY` (secret): see below. SMTP2GO wins if both are set.

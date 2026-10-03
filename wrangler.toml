@@ -15,3 +15,9 @@ binding = "ASSETS"
 # If the deploy complains, create a KV namespace in the dashboard and add: id = "<its id>"
 [[kv_namespaces]]
 binding = "KNOSH"
+
+# Lets the contact form email its messages through Cloudflare itself (no outside account needed).
+# Requires Email Routing on knoshbox.com, and the recipient (NOTIFY_EMAIL) verified under
+# Email Routing > Destination addresses.
+[[send_email]]
+name = "EMAIL"
